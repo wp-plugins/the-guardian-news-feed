@@ -37,14 +37,12 @@ http://www.guardian.co.uk/open-platform
 
 If you have ideas on how to improve the plug-in or other things we could do with WordPress, please join the conversation here:
 
-http://groups.google.com/group/guardian-api-talk
+<a href="http://groups.google.com/group/guardian-api-talk
+">http://groups.google.com/group/guardian-api-talk</a>
 
 Kind Regards,
-
-Daniel Levitt,
-
-daniel.levitt@guardian.co.uk,
-
+Daniel Levitt
+daniel.levitt@guardian.co.uk
 Guardian News & Media Ltd
 
 == Frequently Asked Questions ==
@@ -52,7 +50,7 @@ Guardian News & Media Ltd
 = How do I obtain a key? =
 
 Click 'Get a Key' on the Guardian's Open Platform web site here:
-http://www.guardian.co.uk/open-platform
+<a href="http://www.guardian.co.uk/open-platform">http://www.guardian.co.uk/open-platform</a>
 
 You will need to register, tell us about your blog, and agree to the
 Terms and Conditions.  You will automatically receive a key which can
@@ -61,7 +59,10 @@ then be used to enable this plug-in.
 = I have more questions.  How can I get answers? =
 
 The FAQ for the Open Platform is located here:
-http://www.guardian.co.uk/open-platform/faq
+<a href="http://www.guardian.co.uk/open-platform/faq">http://www.guardian.co.uk/open-platform/faq</a>
+
+And there is a Google Group where you can post questions here:
+<a href="http://groups.google.com/group/guardian-api-talk">http://groups.google.com/group/guardian-api-talk</a>
 
 == Changelog ==
 
@@ -70,7 +71,7 @@ http://www.guardian.co.uk/open-platform/faq
 * Plug-in released.  This beta release is the first version.
 
 == Installation ==
-= none =
+= You can find installation instructions here: <a href="http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin">http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin</a> =
 
 == Upgrade Notice ==
 = none =
