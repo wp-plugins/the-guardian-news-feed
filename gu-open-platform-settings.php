@@ -351,7 +351,7 @@
 					if (!empty($tier_status)) {
 						$data = array(
 					       	'ID' => $article['post_id'],
-				    		'post_content' => "<div id=\"time\">".time()."</div>".$post['post_content'],
+				    		'post_content' => $post['post_content'],
 					       	'post_title' => "This article has been withdrawn",
 					        'post_excerpt' => "<p>The content previously published here has been withdrawn.  We apologise for any inconvenience.</p>",
 					        'tags_input' => array(),
