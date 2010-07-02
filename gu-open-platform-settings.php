@@ -5,7 +5,7 @@
  * Plugin URI: http://www.guardian.co.uk/open-platform
  * Description: Publish articles and related links from the Guardian directly to your blog.  
  * Author: Daniel Levitt for Guardian News and Media Ltd
- * Version: 0.1
+ * Version: 0.2
  * Author URI: http://www.guardian.co.uk/open-platform
  */
 
@@ -57,13 +57,15 @@
  *
  */
 
+	define('GUARDIAN_NEWS_FEED_VERSION', '0.2');
+
 	include('gu-open-platform-article-importer.php');
 	include('gu-open-platform-related.php');
 	include("api". DIRECTORY_SEPARATOR ."gu-open-platform-api.php");
 	
 	define ( GUARD_DIR, dirname(__FILE__));
 	
-	function Guardian_OpenPlatform_admin_page() {
+	function Guardian_OpenPlatform_settings_page() {
 				
 		$api = new GuardianOpenPlatformAPI();
 				
@@ -172,46 +174,19 @@
 		return $str_result;
 	}
 	
-	function Guardian_Replace_Contents() {
-		return;
-	}
-	
-	
+	/*
+	 * Function to replace the old content with the new.
+	 * 
+	 * @param $content			Old Content from DB
+	 * @param $new_content		New content from the API
+	 */
 	function guardian_article_replace( $content, $new_content ) {
-				
+		$prefix = "<!-- GUARDIAN WATERMARK -->";
+		$suffix = "<!-- END GUARDIAN WATERMARK -->";
+		$pattern = $prefix.".*".$suffix;
 		// Set the encoding and wrap in default html markup so getElementById works
-		$content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><body>' . $content . '</body></html>';
-	
-		$dom = new DomDocument;
-		@$dom->loadHTML( $content ); // Suppress DOM errors
-
-		// If div#guardian_do_not_edit exists?
-		if ( (string) $dom->getElementById( 'guardian_do_not_edit' )->nodeValue ) {
-			
-			// Wrap
-			$new_content = "<div id=\"guardian_do_not_edit\">{$new_content}</div>";
-			
-			// Replace the text inside div#guardian_do_not_edit with a placeholder
-			$dom->getElementById( 'guardian_do_not_edit' )->nodeValue = '[guardian_new_content_placeholder]';
-			// Strip out the extra html
-			$content = preg_replace( '/^<!DOCTYPE.+?>/', '', str_replace( array( '<html>', '</html>', '<body>', '</body>', '<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head>' ), '', $dom->saveHTML() ) );
-			// Replace the placeholder with the new html
-			$content = str_replace( '[guardian_new_content_placeholder]', $new_content, $content );
-			// If div#guardian_do_not_edit doesn't exist?
-		} else {
-			// Replace the whole post_content
-			$content = "<div id=\"guardian_do_not_edit\">{$new_content}</div>";
-		}
-		//Prevent the Div tag to be added twice
-		$content = str_replace('<div id="guardian_do_not_edit"><div id="guardian_do_not_edit">', '<div id="guardian_do_not_edit">', $content);
-		
-		// And the closing DIV twice too
-		$content = str_replace('Media Limited 2010</div></div>', 'Media Limited 2010</div>', $content);
-		$content = str_replace('We apologise for any inconvenience.</strong></p></div></div>', 'We apologise for any inconvenience.</strong></p></div>', $content);
-		
-		return trim($content);
+		return trim(preg_replace($pattern, "{$prefix}{$new_content}{$suffix}", $content));
 	}
-	
 	
 	/**
 	 * This is the function that removes Guardian articles upon deactivation
@@ -240,6 +215,57 @@
 				wp_update_post($data);
 			}
 		}
+	}
+	
+	/*
+	 * Function to bug fix version 0.1
+	 */
+	function activate_guardian_update_version() {
+		global $wpdb;
+		 
+		$articles = $wpdb->get_results( "SELECT `post_id`, `meta_value` FROM $wpdb->postmeta WHERE meta_key = 'guardian_content_api_id'", ARRAY_A );		
+		
+		$prefix = "<!-- GUARDIAN WATERMARK -->";
+		$suffix = "<!-- END GUARDIAN WATERMARK -->";
+		
+		$api = new GuardianOpenPlatformAPI();
+		$str_api_key = get_option ( $api->guardian_api_keynameValue() );
+		$api = new GuardianOpenPlatformAPI($str_api_key);
+		
+		foreach ($articles as $article) {
+				
+			$post = get_post($article['post_id'], ARRAY_A);
+			$arr_guard_article = $api->guardian_api_item($article['meta_value']);
+			
+			// Set the encoding and wrap in default html markup so getElementById works
+			$content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><body>' . $post['post_content'] . '</body></html>';
+			$dom = new DomDocument;
+			@$dom->loadHTML( $content ); // Suppress DOM errors
+			// If div#guardian_do_not_edit exists?
+			if ( (string) $dom->getElementById( 'guardian_do_not_edit' )->nodeValue ) {
+					
+				// Wrap
+				$new_content = $prefix.$arr_guard_article ['fields'] ['body'].$suffix;
+				
+				// Replace the text inside div#guardian_do_not_edit with a placeholder
+				$dom->getElementById( 'guardian_do_not_edit' )->nodeValue = '[guardian_new_content_placeholder]';
+				// Strip out the extra html
+				$content = preg_replace( '/^<!DOCTYPE.+?>/', '', str_replace( array( '<html>', '</html>', '<body>', '</body>', '<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head>' ), '', $dom->saveHTML() ) );
+				// Replace the placeholder with the new html
+				$content = str_replace( '[guardian_new_content_placeholder]', $new_content, $content );
+				// If div#guardian_do_not_edit doesn't exist?
+			}
+			
+			//Prevent the Div tag to be added twice
+			$content = str_replace('<div id="guardian_do_not_edit">'.$prefix, $prefix, $content);
+			$content = str_replace($suffix.'</div>', $suffix, $content);
+			
+			$data = array(
+        		'ID' => $article['post_id'],
+				'post_content'=>$content
+			);
+			wp_update_post($data);
+		} 
 	}
 	
 	/**
@@ -305,18 +331,17 @@
 				        $new_content .= $arr_guard_article ['fields'] ['body'];
 				        $new_content .= "guardian.co.uk &#169; Guardian News &amp; Media Limited 2010";
 					}
-			        
-					$post['post_content'] = guardian_article_replace($post['post_content'],  $new_content);
+					$replace = guardian_article_replace($post['post_content'],  $new_content);
 					
 					$data = array(
 	        			'ID' => $article['post_id'],
-	        			'post_content' => $post['post_content'],
 	        			'post_title' => $arr_guard_article ['fields'] ['headline'],
 	        			'post_excerpt' => $arr_guard_article ['fields'] ['standfirst'],
-	        			'tags_input' => $tagarray
+	        			'tags_input' => $tagarray,
+	        			'post_author'=>$post['post_author']
 					);
-					 
 					wp_update_post($data);
+
 				} else {
 					
 					$tier_status = $api->guardian_get_tier();
@@ -326,10 +351,11 @@
 					if (!empty($tier_status)) {
 						$data = array(
 					       	'ID' => $article['post_id'],
-				    		'post_content' => $post['post_content'],
+				    		'post_content' => "<div id=\"time\">".time()."</div>".$post['post_content'],
 					       	'post_title' => "This article has been withdrawn",
 					        'post_excerpt' => "<p>The content previously published here has been withdrawn.  We apologise for any inconvenience.</p>",
-					        'tags_input' => array()
+					        'tags_input' => array(),
+					        'post_author'=>$post['post_author']
 						);
 						wp_update_post($data);
 					}					
@@ -342,7 +368,7 @@
 	function Guardian_OpenPlatform_add_pages() {
 		global $wpdb;
 		if (function_exists ( "add_submenu_page" )) {
-        	add_submenu_page('plugins.php', __('The Guardian News Feed Configuration'), __('The Guardian News Feed Configuration'), 'manage_options', __FILE__, 'Guardian_OpenPlatform_admin_page');
+        	add_submenu_page('plugins.php', __('The Guardian News Feed Configuration'), __('The Guardian News Feed Configuration'), 'manage_options', __FILE__, 'Guardian_OpenPlatform_settings_page');
 		}
 	}
 	// Plugin admin menus
@@ -352,14 +378,17 @@
 	 * Code to enable the wordpress scheduling of refreshing the articles.
 	 */
 	register_activation_hook(__FILE__, 'activate_guardian_scheduling');
+	register_activation_hook(__FILE__, 'activate_guardian_update_version');
 	add_action('refresh_articles', 'Guardian_ContentAPI_refresh_articles');
 	
+	/*
+	 * Activate the scheduling
+	 */
 	function activate_guardian_scheduling() {
 		set_time_limit  (0);
 		wp_schedule_event(time(), 'daily', 'refresh_articles');
 		Guardian_ContentAPI_refresh_articles();
 	}
-	
 	
 	/*
 	 * Code to deactivate plugin, remove the scheduler and remove the article contents. Plugin can be activated and contents will be restored.
@@ -373,4 +402,5 @@
 	}
 
 	register_sidebar_widget ( __ ( 'The Guardian News Feed - Related Articles' ), 'widget_Guardian_Related' );
+
 ?>

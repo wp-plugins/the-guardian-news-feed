@@ -205,7 +205,7 @@
     		
     		$postcontent = "<p><em><strong>PLEASE NOTE</strong>: Add your own commentary here above the horizontal line, but do not make any changes below the line.  (Of course, you should also delete this text before you publish this post.)</em></p>\n\n";
     		
-        	$postcontent .= "<hr /><div id=\"guardian_do_not_edit\">";
+        	$postcontent .= "<hr /><!-- GUARDIAN WATERMARK -->";
     		
         	$postcontent .= "<p><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />";
         	$postcontent .= "<a href=\"{$article ['fields'] ['shortUrl']}\">This article was written by {$article ['fields'] ['byline']}, for {$article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($article ['webPublicationDate']))."</a></p>";
@@ -219,8 +219,8 @@
         	}
         	
         	$postcontent .= $article ['fields'] ['body'];
-        	$postcontent .= "guardian.co.uk &#169; Guardian News and Media Limited 2010";
-        	$postcontent .= "</div>";
+        	$postcontent .= "<p>guardian.co.uk &#169; Guardian News and Media Limited 2010</p>";
+        	$postcontent .= "<!-- END GUARDIAN WATERMARK -->";
         	        	
     		$data = array(
         		'ID' => null,

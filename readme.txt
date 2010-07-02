@@ -56,6 +56,9 @@ You will need to register, tell us about your blog, and agree to the
 Terms and Conditions.  You will automatically receive a key which can
 then be used to enable this plug-in.
 
+= Why do articles appear in the search results that don't have republishing rights? =
+This is a bug that we're working to fix.  We're aware that it can be really annoying.  We'll update the plugin when we get a solution in place.
+
 = I have more questions.  How can I get answers? =
 
 The FAQ for the Open Platform is located here:
@@ -69,6 +72,11 @@ And there is a Google Group where you can post questions here:
 = 0.1 =
 
 * Plug-in released.  This beta release is the first version.
+
+= 0.2 =
+
+* Bugfix: A critical bug with the daily refresh was found and fixed.
+* Some minor text changes
 
 == Installation ==
 = You can find installation instructions here: <a href="http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin">http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin</a> =
