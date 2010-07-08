@@ -67,7 +67,6 @@ And there is a Google Group where you can post questions here:
 == Changelog ==
 
 = 0.3 =
-
 * Relies more on Wordpress functions (less error prone)
 * Bug fix to allow filtering by section
 * Give thumbnails fixed width and height

@@ -97,8 +97,8 @@
 			}
 			?>
 			<p>In order to publish Guardian articles on your blog we require that you <a target="_blank" href="http://guardian.mashery.com">register</a> and agree to the <a target="_blank" href="http://www.guardian.co.uk/open-platform/terms-and-conditions">Terms and Conditions</a>.</p>
-	                <p>The process only takes a few moments.  If you have any questions, please have a look through the <a target="_blank" href="http://www.guardian.co.uk/open-platform/faq">FAQ</a> or post your question in the <a target="_blank" href="http://groups.google.com/group/guardian-api-talk">Google Group</a>.</p>	        
-		        <p>An API key is not required for the 'Related Articles' sidebar widget included in this plugin, you can use it straight away.</p>
+	        <p>The process only takes a few moments.  If you have any questions, please have a look through the <a target="_blank" href="http://www.guardian.co.uk/open-platform/faq">FAQ</a> or post your question in the <a target="_blank" href="http://groups.google.com/group/guardian-api-talk">Google Group</a>.</p>	        
+		    <p>An API key is not required for the 'Related Articles' sidebar widget included in this plugin, you can use it straight away.</p>
 	        
 			
 			<form name="form1" method="post" action="">
@@ -181,40 +181,7 @@
 	 * @param $new_content		New content from the API
 	 */
 	function guardian_article_replace( $content, $new_content ) {
-		$prefix = "<!-- GUARDIAN WATERMARK -->";
-		$suffix = "<!-- END GUARDIAN WATERMARK -->";
-		$pattern = $prefix.".*".$suffix;
-		// Set the encoding and wrap in default html markup so getElementById works
-		return trim(preg_replace($pattern, "{$prefix}{$new_content}{$suffix}", $content));
-	}
-	
-	/**
-	 * This is the function that removes Guardian articles upon deactivation
-	 * 
-	 * Postmeta is left intact so data will be reloaded upon activation again.
-	 */
-	function Guardian_ContentAPI_remove_articles() {
-		global $wpdb;
-				 		 		 
-		$articles = $wpdb->get_results( "SELECT `post_id`, `meta_value` FROM $wpdb->postmeta WHERE meta_key = 'guardian_content_api_id'", ARRAY_A );
-				 
-		if (!empty($articles)) {
-			foreach ($articles as $article) {
-				
-				$post = get_post($article['post_id'], ARRAY_A);
-				
-				$post['post_content'] = guardian_article_replace($post['post_content'], "<p><strong>The content previously published here has been withdrawn.  We apologise for any inconvenience.</strong></p>");
-				
-				$data = array(
-				 	'ID' => $article['post_id'],
-			    	'post_content' => $post['post_content'],
-				    'post_title' => "This article has been withdrawn",
-				    'post_excerpt' => "<p>The content previously published here has been withdrawn.  We apologise for any inconvenience.</p>",
-				    'tags_input' => array()
-				);
-				wp_update_post($data);
-			}
-		}
+		return trim(preg_replace("/<!-- GUARDIAN WATERMARK -->.*?<!-- END GUARDIAN WATERMARK -->/s", "<!-- GUARDIAN WATERMARK -->{$new_content}<!-- END GUARDIAN WATERMARK -->", $content));
 	}
 	
 	/**
@@ -222,7 +189,7 @@
 	 *
 	 * This function should be scheduled for daily access
 	 */
-	function Guardian_ContentAPI_refresh_articles() {
+	function Guardian_ContentAPI_refresh_articles($update_article = true) {
 		 
 		global $wpdb;
 		 
@@ -250,7 +217,7 @@
 					sleep(1);
 				}
 				
-				if (!empty($arr_guard_article)) {
+				if (!empty($arr_guard_article) && $update_article) {
 					
 					// Get the tags
 					$tags = $arr_guard_article ['tags'];
@@ -287,6 +254,7 @@
 					
 					$data = array(
 	        			'ID' => $article['post_id'],
+						'post_content' => $replace,
 	        			'post_title' => $arr_guard_article ['fields'] ['headline'],
 	        			'post_excerpt' => $arr_guard_article ['fields'] ['standfirst'],
 	        			'tags_input' => $tagarray,
@@ -358,7 +326,7 @@
 	function my_deactivation() {
 		set_time_limit  (0);
 		wp_clear_scheduled_hook('refresh_articles');
-		Guardian_ContentAPI_remove_articles();
+		Guardian_ContentAPI_refresh_articles(false);
 	}
 
 	register_sidebar_widget ( __ ( 'The Guardian News Feed - Related Articles' ), 'widget_Guardian_Related' );

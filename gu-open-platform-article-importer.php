@@ -236,7 +236,8 @@
         	
         	$message[] = "<div class=\"updated\">";
         	$message[] = "	<p><strong>Ready to publish:</strong>  <em>\"{$data['post_title']}\"</em> was successfully saved in <strong><a href=\"".admin_url("edit.php?post_status=draft")."\">Draft Mode</a></strong>. Now you can <strong><a href=\"".admin_url("post.php?action=edit&post={$guardian_post_id}")."\">edit and publish</a></strong> your blog post.</p>";
-        	$message[] = "	<p></p><p><em><strong>Note:</strong> Have you read the publishing guidelines, yet?  There are some important reminders to keep in mind.  See them in the box on the right of this admin panel.</em></p>";
+        	$message[] = "	<p></p><p><em><strong>Note:</strong> Have you read the publishing guidelines, yet?  There are some important reminders to keep in mind.  See them in the box on the right of this admin panel.</em></p>";
+
         	$message[] = "</div>";
     	} else {
     		$message[] = "<div class=\"error\">";
@@ -264,15 +265,22 @@
     	$file = wp_remote_retrieve_body( wp_remote_get('http://static.guim.co.uk/openplatform/wp-plugin/notices.txt') );
     	$file_arr = explode('=====', $file);
     	
-    	$version = $file_arr[0];
+    	$version = trim($file_arr[0]);
     	
     	$publishing_guidelines = $file_arr[1];
-    	$general_message = $file_arr[2];
-    	if (!empty($general_message) && ($version == get_option('GUARDIAN_NEWS_FEED_VERSION'))) {
-    		echo "<div class=\"updated\">{$general_message}</div>";
+    	$error_message = $file_arr[2];
+    	$got_latest_message = $file_arr[3];
+    	$update_message = str_replace('{plugins_url}', admin_url("plugins.php"), $file_arr[4]);
+    	
+    	if ($version == get_option('GUARDIAN_NEWS_FEED_VERSION')) {
+    		echo "<div class=\"updated\">{$got_latest_message}</div>";
     	} else {
-    		echo "<div class=\"updated\"><p><strong>There is a new version of this plugin available.</strong> Please visit your <a href=\"".admin_url("/plugins.php")."\">plugins admin panel to get the latest version.</a></p></div>";
+	    	if (!empty($error_message)) {
+	    		echo "<div class=\"error\">{$error_message}</div>";
+	    	}
+	    	echo "<div class=\"updated\">{$update_message}</div>";
     	}
+    	
     	return $publishing_guidelines;
     }
     
