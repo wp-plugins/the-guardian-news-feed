@@ -235,12 +235,13 @@
         	// Add the Content API id to post_meta
         	
         	$message[] = "<div class=\"updated\">";
-        	$message[] = "	<p><strong>Ready to publish:</strong>  <em>\"{$data['post_title']}\"</em> was successfully saved in <strong><a href=\"".get_bloginfo('url')."/wp-admin/edit.php?post_status=draft\">Draft Mode</a></strong>. Now you can <strong><a href=\"".get_bloginfo('url')."/wp-admin/post.php?action=edit&post={$guardian_post_id}\">edit and publish</a></strong> your blog post.</p>";
-        	$message[] = "	<p></p><p><em><strong>Note:</strong> Have you read the publishing guidelines, yet?  There are some important reminders to keep in mind.  See them in the box on the right of this admin panel.</em></p>";
+        	$message[] = "	<p><strong>Ready to publish:</strong>  <em>\"{$data['post_title']}\"</em> was successfully saved in <strong><a href=\"".admin_url("edit.php?post_status=draft")."\">Draft Mode</a></strong>. Now you can <strong><a href=\"".admin_url("post.php?action=edit&post={$guardian_post_id}")."\">edit and publish</a></strong> your blog post.</p>";
+        	$message[] = "	<p></p><p><em><strong>Note:</strong> Have you read the publishing guidelines, yet?  There are some important reminders to keep in mind.  See them in the box on the right of this admin panel.</em></p>";
+
         	$message[] = "</div>";
     	} else {
     		$message[] = "<div class=\"error\">";
-    		$message[] = "	<p>That article has already been downloaded to your blog. You may need to delete it permanently from the <strong><a href=\"".get_bloginfo('url')."/wp-admin/edit.php?post_status=trash\">Trash</a></strong>.</p>";
+    		$message[] = "	<p>That article has already been downloaded to your blog. You may need to delete it permanently from the <strong><a href=\"".admin_url("edit.php?post_status=trash")."\">Trash</a></strong>.</p>";
     		$message[] = "</div>";
     	}
     	return implode("\n", $message);
@@ -261,13 +262,25 @@
      * Function to retrieve the publishing guidelines as well as display updates about the API.
      */
     function Guardian_Dynamic_Text() {
-    	$file = file_get_contents('http://static.guim.co.uk/openplatform/wp-plugin/notices.txt');
+    	$file = wp_remote_retrieve_body( wp_remote_get('http://static.guim.co.uk/openplatform/wp-plugin/notices.txt') );
     	$file_arr = explode('=====', $file);
-    	$publishing_guidelines = $file_arr[0];
-    	$general_message = $file_arr[1];
-    	if (!empty($general_message)) {
-    		echo "<div class=\"updated\">{$general_message}</div>";
+    	
+    	$version = trim($file_arr[0]);
+    	
+    	$publishing_guidelines = $file_arr[1];
+    	$error_message = $file_arr[2];
+    	$got_latest_message = $file_arr[3];
+    	$update_message = str_replace('{plugins_url}', admin_url("plugins.php"), $file_arr[4]);
+    	
+    	if ($version == get_option('GUARDIAN_NEWS_FEED_VERSION')) {
+    		echo "<div class=\"updated\">{$got_latest_message}</div>";
+    	} else {
+	    	if (!empty($error_message)) {
+	    		echo "<div class=\"error\">{$error_message}</div>";
+	    	}
+	    	echo "<div class=\"updated\">{$update_message}</div>";
     	}
+    	
     	return $publishing_guidelines;
     }
     
@@ -302,7 +315,7 @@
     		}
     		$image = '';
     		if (!empty($related_content ['fields'] ['thumbnail'])) {
-    			$image = "<img src=\"{$related_content ['fields'] ['thumbnail']}\"></img>";
+    			$image = "<img src=\"{$related_content ['fields'] ['thumbnail']}\" width=\"140\" height=\"84\" style=\"padding:5px 0;\" alt=\"{$related_content ['fields'] ['headline']}\">";
     		}
     		$link = "{$_SERVER['PHP_SELF']}?page={$_GET['page']}&s={$_GET['s']}&tag={$_GET['tag']}&section={$_GET['section']}&contentid={$related_content ['id']}";
     		
@@ -414,7 +427,9 @@
      * @array $articles			We specifically only need $articles[refinementGroups]
      */
     function render_refinements($articles) {
-    		
+    	
+    	$output = array();
+    	
     	if (!empty($articles['refinementGroups'])) {
 
     		$output[] = "	<div class=\"postbox\">";
@@ -468,12 +483,13 @@
 	        }
 	        
         	foreach ($articles['refinementGroups'] as $refinementsGroup) {
-	        	$output[] = "		<div class=\"misc-pub-section\">";
+        		
+        		$output[] = "		<div class=\"misc-pub-section\">";
 	        	
 	        	$output[] = "		<p><strong>".ucfirst($refinementsGroup['type'])."</strong></p>";
 	        	foreach ($refinementsGroup['refinements'] as $refinementItem) {
-
-	        		if (!empty($refinementItem['section'])) {
+	        		
+	        		if (!preg_match('#/#', $refinementItem['id'] )) {
 	        			if ($_GET['section']) {
 		        			$sectionLink .= $_GET['section'].",".$refinementItem['id'];
 		        		} else {
@@ -493,10 +509,11 @@
 		        		$tagLink = '';
 	        		}
 	        	}
+	        	
 	        	$output[] = "		</div>";
 	        }
-        }        
-        return implode("\n", $output);
+        } 
+        return implode( "\n", $output );
     }
     
     /*
