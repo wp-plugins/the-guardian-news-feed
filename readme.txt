@@ -66,6 +66,11 @@ And there is a Google Group where you can post questions here:
 
 == Changelog ==
 
+= 0.4 =
+* Better support for JSON under older versions of PHP or Wordpress
+* Changed Guardian short url to full url in publishing articles
+* Improved fallbacks to ensure a post excerpt is included
+
 = 0.3 =
 * Relies more on Wordpress functions (less error prone)
 * Bug fix to allow filtering by section
