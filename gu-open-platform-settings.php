@@ -238,7 +238,7 @@
 					} else {
 						
 						// Article is fine and well						
-						$new_content = "<p><a href=\"{$arr_guard_article ['fields'] ['shortUrl']}\"><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />This article was written by {$arr_guard_article ['fields'] ['byline']}, for {$arr_guard_article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($arr_guard_article ['webPublicationDate']))."</a></p>";
+						$new_content = "<p><a href=\"{$arr_guard_article ['webUrl']}\"><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />This article was written by {$arr_guard_article ['fields'] ['byline']}, for {$arr_guard_article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($arr_guard_article ['webPublicationDate']))."</a></p>";
 						
 				    	if (!empty($arr_guard_article['mediaAssets'])) {
 				        	foreach ($arr_guard_article['mediaAssets'] as $media) {
@@ -252,6 +252,11 @@
 					}
 					$replace = guardian_article_replace($post['post_content'],  $new_content);
 					
+					// Defaults to trailtext if standfirst is empty
+		    		if (empty($arr_guard_article ['fields'] ['standfirst'])) {
+		        		$arr_guard_article ['fields'] ['standfirst'] = $arr_guard_article ['fields'] ['trailText'];
+		        	}
+		        	
 					$data = array(
 	        			'ID' => $article['post_id'],
 						'post_content' => $replace,
@@ -290,6 +295,37 @@
 				}
 			}
 		}
+	}
+	
+	// JSON support
+	function guardian_id_got_json() {
+		// WP 2.9+ handles everything for us
+		if ( version_compare( get_bloginfo( 'version' ), '2.9', '>=' ) )
+			return true;
+		
+		// Functions exists already, assume they're good to go
+		if ( function_exists( 'json_encode' ) && function_exists( 'json_decode' ) )
+			return true;
+		
+		// Load Services_JSON if we need it at this point
+		if ( !class_exists( 'Services_JSON' ) )
+			include_once( dirname( __FILE__ ) . '/class.json.php' );
+		
+		// This indicates that we need to define the functions.
+		// Services_JSON *is* available one way or another at this point
+		return false;
+	}
+
+	if ( !guardian_id_got_json() ) {
+		function json_encode( $data ) {
+	        $json = new Services_JSON();
+	        return( $json->encode( $data ) );
+	    }
+
+		function json_decode( $data ) {
+	        $json = new Services_JSON();
+	        return( $json->decode( $data ) );
+	    }
 	}
 	
 	

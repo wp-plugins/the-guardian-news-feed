@@ -208,9 +208,16 @@
         	$postcontent .= "<hr /><!-- GUARDIAN WATERMARK -->";
     		
         	$postcontent .= "<p><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />";
-        	$postcontent .= "<a href=\"{$article ['fields'] ['shortUrl']}\">This article was written by {$article ['fields'] ['byline']}, for {$article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($article ['webPublicationDate']))."</a></p>";
+        	$postcontent .= "<a href=\"{$article ['webUrl']}\">This article was written by {$article ['fields'] ['byline']}, for {$article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($article ['webPublicationDate']))."</a></p>";
         	
-    		if (!empty($article['mediaAssets'])) {
+        	
+        	// Defaults to trailtext if standfirst is empty
+    		if (empty($article ['fields'] ['standfirst'])) {
+        		$article ['fields'] ['standfirst'] = $article ['fields'] ['trailText'];
+        	}
+        	
+        	// Inlcude images if applicable
+        	if (!empty($article['mediaAssets'])) {
         		foreach ($article['mediaAssets'] as $media) {
         			if ($media['type'] == 'picture') {
         				$postcontent .= "<img src=\"{$media['file']}\" class=\"aligncenter\" alt=\"{$media['fields']['caption']}\">";
