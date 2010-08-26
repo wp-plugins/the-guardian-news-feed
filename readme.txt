@@ -5,7 +5,7 @@ Donate link:
 Tags: news
 Requires at least: 2.5
 Tested up to: 3.0
-Stable tag: trunk
+Stable tag: 0.3
 
 The Guardian News Feed plug-in enables you to publish articles by the Guardian directly to your blog.
 
@@ -56,9 +56,6 @@ You will need to register, tell us about your blog, and agree to the
 Terms and Conditions.  You will automatically receive a key which can
 then be used to enable this plug-in.
 
-= Why do articles appear in the search results that don't have republishing rights? =
-This is a bug that we're working to fix.  We're aware that it can be really annoying.  We'll update the plugin when we get a solution in place.
-
 = I have more questions.  How can I get answers? =
 
 The FAQ for the Open Platform is located here:
@@ -69,14 +66,22 @@ And there is a Google Group where you can post questions here:
 
 == Changelog ==
 
-= 0.1 =
-
-* Plug-in released.  This beta release is the first version.
+= 0.3 =
+* Relies more on Wordpress functions (less error prone)
+* Bug fix to allow filtering by section
+* Give thumbnails fixed width and height
+* Modified refresh function to remove post revisions on published posts.
+* Changed image for reverse Guardian Logo
+* Imporved version control
 
 = 0.2 =
 
 * Bugfix: A critical bug with the daily refresh was found and fixed.
 * Some minor text changes
+
+= 0.1 =
+
+* Plug-in released.  This beta release is the first version.
 
 == Installation ==
 = You can find installation instructions here: <a href="http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin">http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin</a> =

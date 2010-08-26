@@ -5,7 +5,7 @@
  * Plugin URI: http://www.guardian.co.uk/open-platform
  * Description: Publish articles and related links from the Guardian directly to your blog.  
  * Author: Daniel Levitt for Guardian News and Media Ltd
- * Version: 0.2
+ * Version: 0.3
  * Author URI: http://www.guardian.co.uk/open-platform
  */
 
@@ -57,7 +57,7 @@
  *
  */
 
-	define('GUARDIAN_NEWS_FEED_VERSION', '0.2');
+	define('GUARDIAN_NEWS_FEED_VERSION', '0.3');
 
 	include('gu-open-platform-article-importer.php');
 	include('gu-open-platform-related.php');
@@ -97,8 +97,8 @@
 			}
 			?>
 			<p>In order to publish Guardian articles on your blog we require that you <a target="_blank" href="http://guardian.mashery.com">register</a> and agree to the <a target="_blank" href="http://www.guardian.co.uk/open-platform/terms-and-conditions">Terms and Conditions</a>.</p>
-	                <p>The process only takes a few moments.  If you have any questions, please have a look through the <a target="_blank" href="http://www.guardian.co.uk/open-platform/faq">FAQ</a> or post your question in the <a target="_blank" href="http://groups.google.com/group/guardian-api-talk">Google Group</a>.</p>	        
-		        <p>An API key is not required for the 'Related Articles' sidebar widget included in this plugin, you can use it straight away.</p>
+	        <p>The process only takes a few moments.  If you have any questions, please have a look through the <a target="_blank" href="http://www.guardian.co.uk/open-platform/faq">FAQ</a> or post your question in the <a target="_blank" href="http://groups.google.com/group/guardian-api-talk">Google Group</a>.</p>	        
+		    <p>An API key is not required for the 'Related Articles' sidebar widget included in this plugin, you can use it straight away.</p>
 	        
 			
 			<form name="form1" method="post" action="">
@@ -113,7 +113,7 @@
 							<th valign="top" scope="row">Guardian Logo:</th>
 							<td>
 								<select size="1" name="guardian_powered_image">
-									<option <?php if ($logo == '') {echo ' selected="selected"'; } ?> value="">Normal</option>
+									<option <?php if (!$logo) {echo ' selected="selected"'; } ?> value="">Normal</option>
 									<option <?php if ($logo == 'BLACK') {echo ' selected="selected"'; } ?> value="BLACK">Black</option>
 									<option <?php if ($logo == 'WHITE') {echo ' selected="selected"'; } ?> value="WHITE">White</option>
 									<option <?php if ($logo == 'REV') {echo ' selected="selected"'; } ?> value="REV">Reverse</option>
@@ -131,22 +131,22 @@
 			
 			<div class="guardian-logo-type" style="float:left; width:auto; padding:0 15px;">
 				<p><strong>Normal</strong></p>
-				<img style="border:1px dotted #464646" src="<?php echo WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__)) ?>/images/logo-normal.jpg">
+				<img style="border:1px dotted #464646" src="<?php echo plugin_dir_url(__FILE__) ?>/images/logo-normal.jpg">
 			</div>
 			
 			<div class="guardian-logo-type" style="float:left; width:auto; padding:0 15px;">
 				<p><strong>Black</strong></p>
-				<img style="border:1px dotted #464646" src="<?php echo WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__)) ?>/images/logo-black.jpg">
+				<img style="border:1px dotted #464646" src="<?php echo plugin_dir_url(__FILE__) ?>/images/logo-black.jpg">
 			</div>
 			
 			<div class="guardian-logo-type" style="float:left; width:auto; padding:0 15px;">
 				<p><strong>White</strong></p>
-				<img style="border:1px dotted #464646" src="<?php echo WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__)) ?>/images/logo-white.jpg">
+				<img style="border:1px dotted #464646" src="<?php echo plugin_dir_url(__FILE__) ?>/images/logo-white.jpg">
 			</div>
 			
 			<div class="guardian-logo-type" style="float:left; width:auto; padding:0 15px;">
 				<p><strong>Reverse</strong></p>
-				<img style="border:1px dotted #464646" src="<?php echo WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__)) ?>/images/logo-reverse.jpg">
+				<img style="border:1px dotted #464646" src="<?php echo plugin_dir_url(__FILE__) ?>/images/logo-reverse.jpg">
 			</div>
 		</div>
 	
@@ -181,91 +181,7 @@
 	 * @param $new_content		New content from the API
 	 */
 	function guardian_article_replace( $content, $new_content ) {
-		$prefix = "<!-- GUARDIAN WATERMARK -->";
-		$suffix = "<!-- END GUARDIAN WATERMARK -->";
-		$pattern = $prefix.".*".$suffix;
-		// Set the encoding and wrap in default html markup so getElementById works
-		return trim(preg_replace($pattern, "{$prefix}{$new_content}{$suffix}", $content));
-	}
-	
-	/**
-	 * This is the function that removes Guardian articles upon deactivation
-	 * 
-	 * Postmeta is left intact so data will be reloaded upon activation again.
-	 */
-	function Guardian_ContentAPI_remove_articles() {
-		global $wpdb;
-				 		 		 
-		$articles = $wpdb->get_results( "SELECT `post_id`, `meta_value` FROM $wpdb->postmeta WHERE meta_key = 'guardian_content_api_id'", ARRAY_A );
-				 
-		if (!empty($articles)) {
-			foreach ($articles as $article) {
-				
-				$post = get_post($article['post_id'], ARRAY_A);
-				
-				$post['post_content'] = guardian_article_replace($post['post_content'], "<p><strong>The content previously published here has been withdrawn.  We apologise for any inconvenience.</strong></p>");
-				
-				$data = array(
-				 	'ID' => $article['post_id'],
-			    	'post_content' => $post['post_content'],
-				    'post_title' => "This article has been withdrawn",
-				    'post_excerpt' => "<p>The content previously published here has been withdrawn.  We apologise for any inconvenience.</p>",
-				    'tags_input' => array()
-				);
-				wp_update_post($data);
-			}
-		}
-	}
-	
-	/*
-	 * Function to bug fix version 0.1
-	 */
-	function activate_guardian_update_version() {
-		global $wpdb;
-		 
-		$articles = $wpdb->get_results( "SELECT `post_id`, `meta_value` FROM $wpdb->postmeta WHERE meta_key = 'guardian_content_api_id'", ARRAY_A );		
-		
-		$prefix = "<!-- GUARDIAN WATERMARK -->";
-		$suffix = "<!-- END GUARDIAN WATERMARK -->";
-		
-		$api = new GuardianOpenPlatformAPI();
-		$str_api_key = get_option ( $api->guardian_api_keynameValue() );
-		$api = new GuardianOpenPlatformAPI($str_api_key);
-		
-		foreach ($articles as $article) {
-				
-			$post = get_post($article['post_id'], ARRAY_A);
-			$arr_guard_article = $api->guardian_api_item($article['meta_value']);
-			
-			// Set the encoding and wrap in default html markup so getElementById works
-			$content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><body>' . $post['post_content'] . '</body></html>';
-			$dom = new DomDocument;
-			@$dom->loadHTML( $content ); // Suppress DOM errors
-			// If div#guardian_do_not_edit exists?
-			if ( (string) $dom->getElementById( 'guardian_do_not_edit' )->nodeValue ) {
-					
-				// Wrap
-				$new_content = $prefix.$arr_guard_article ['fields'] ['body'].$suffix;
-				
-				// Replace the text inside div#guardian_do_not_edit with a placeholder
-				$dom->getElementById( 'guardian_do_not_edit' )->nodeValue = '[guardian_new_content_placeholder]';
-				// Strip out the extra html
-				$content = preg_replace( '/^<!DOCTYPE.+?>/', '', str_replace( array( '<html>', '</html>', '<body>', '</body>', '<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head>' ), '', $dom->saveHTML() ) );
-				// Replace the placeholder with the new html
-				$content = str_replace( '[guardian_new_content_placeholder]', $new_content, $content );
-				// If div#guardian_do_not_edit doesn't exist?
-			}
-			
-			//Prevent the Div tag to be added twice
-			$content = str_replace('<div id="guardian_do_not_edit">'.$prefix, $prefix, $content);
-			$content = str_replace($suffix.'</div>', $suffix, $content);
-			
-			$data = array(
-        		'ID' => $article['post_id'],
-				'post_content'=>$content
-			);
-			wp_update_post($data);
-		} 
+		return trim(preg_replace("/<!-- GUARDIAN WATERMARK -->.*?<!-- END GUARDIAN WATERMARK -->/s", "<!-- GUARDIAN WATERMARK -->{$new_content}<!-- END GUARDIAN WATERMARK -->", $content));
 	}
 	
 	/**
@@ -273,7 +189,7 @@
 	 *
 	 * This function should be scheduled for daily access
 	 */
-	function Guardian_ContentAPI_refresh_articles() {
+	function Guardian_ContentAPI_refresh_articles($update_article = true) {
 		 
 		global $wpdb;
 		 
@@ -284,20 +200,25 @@
 		$api = new GuardianOpenPlatformAPI($str_api_key);
 		 
 		$articles = $wpdb->get_results( "SELECT `post_id`, `meta_value` FROM $wpdb->postmeta WHERE meta_key = 'guardian_content_api_id'", ARRAY_A );
-				 
+		
 		if (!empty($articles)) {
 			foreach ($articles as $article) {
-				 
+				
+				$arr_guard_article = array();
 				$data = array();
 				$find = array();
 				$new_content = '';
 				$tagarray = array();
 				
-				$arr_guard_article = $api->guardian_api_item($article['meta_value']);
-				sleep(1);
+				$post = get_post($article['post_id'], ARRAY_A);
 				
-				if (!empty($arr_guard_article)) {
-	
+				if ($post['post_status'] == 'publish') {
+					$arr_guard_article = $api->guardian_api_item($article['meta_value']);
+					sleep(1);
+				}
+				
+				if (!empty($arr_guard_article) && $update_article) {
+					
 					// Get the tags
 					$tags = $arr_guard_article ['tags'];
 					$tagarray = array();
@@ -309,8 +230,6 @@
 					}
 					$tagarray = implode(', ', $tagarray);
 					 
-					$post = get_post($article['post_id'], ARRAY_A);
-					
 					if (empty($arr_guard_article ['fields'] ['body']) || $arr_guard_article ['fields'] ['body'] == '<!-- Redistribution rights for this field are unavailable -->') {
 						$new_content = "<p><strong>The content previously published here has been withdrawn.  We apologise for any inconvenience.</strong></p>";
 						$arr_guard_article ['fields'] ['headline'] = "This article has been withdrawn";
@@ -335,30 +254,39 @@
 					
 					$data = array(
 	        			'ID' => $article['post_id'],
+						'post_content' => $replace,
 	        			'post_title' => $arr_guard_article ['fields'] ['headline'],
 	        			'post_excerpt' => $arr_guard_article ['fields'] ['standfirst'],
 	        			'tags_input' => $tagarray,
 	        			'post_author'=>$post['post_author']
 					);
 					wp_update_post($data);
+					
+					// Delete revisions
+					$sql = "DELETE a,b,c FROM $wpdb->posts a LEFT JOIN $wpdb->term_relationships b ON (a.ID = b.object_id) LEFT JOIN $wpdb->postmeta c ON (a.ID = c.post_id) WHERE a.post_type = 'revision' AND a.post_parent = {$article['post_id']}";
+					$wpdb->query($sql);
 
 				} else {
 					
-					$tier_status = $api->guardian_get_tier();
-					$post = array();
-					$post['post_content'] = guardian_article_replace($post['post_content'],  "<p><strong>The content previously published here has been withdrawn.  We apologise for any inconvenience.</strong></p>");
-					
-					if (!empty($tier_status)) {
-						$data = array(
-					       	'ID' => $article['post_id'],
-				    		'post_content' => $post['post_content'],
-					       	'post_title' => "This article has been withdrawn",
-					        'post_excerpt' => "<p>The content previously published here has been withdrawn.  We apologise for any inconvenience.</p>",
-					        'tags_input' => array(),
-					        'post_author'=>$post['post_author']
-						);
-						wp_update_post($data);
-					}					
+					if ($post['post_status'] == 'publish') {
+						$tier_status = $api->guardian_get_tier();
+						$post['post_content'] = guardian_article_replace($post['post_content'],  "<p><strong>The content previously published here has been withdrawn.  We apologise for any inconvenience.</strong></p>");
+						
+						if (!empty($tier_status)) {
+							$data = array(
+						       	'ID' => $article['post_id'],
+					    		'post_content' => $post['post_content'],
+						       	'post_title' => "This article has been withdrawn",
+						        'post_excerpt' => "<p>The content previously published here has been withdrawn.  We apologise for any inconvenience.</p>",
+						        'tags_input' => array(),
+						        'post_author'=>$post['post_author']
+							);
+							wp_update_post($data);
+							// Delete revisions
+							$sql = "DELETE a,b,c FROM $wpdb->posts a LEFT JOIN $wpdb->term_relationships b ON (a.ID = b.object_id) LEFT JOIN $wpdb->postmeta c ON (a.ID = c.post_id) WHERE a.post_type = 'revision' AND a.post_parent = {$article['post_id']}";
+							$wpdb->query($sql);
+						}
+					}
 				}
 			}
 		}
@@ -378,15 +306,15 @@
 	 * Code to enable the wordpress scheduling of refreshing the articles.
 	 */
 	register_activation_hook(__FILE__, 'activate_guardian_scheduling');
-	register_activation_hook(__FILE__, 'activate_guardian_update_version');
 	add_action('refresh_articles', 'Guardian_ContentAPI_refresh_articles');
 	
 	/*
 	 * Activate the scheduling
 	 */
 	function activate_guardian_scheduling() {
-		set_time_limit  (0);
-		wp_schedule_event(time(), 'daily', 'refresh_articles');
+		update_option ('GUARDIAN_NEWS_FEED_VERSION', GUARDIAN_NEWS_FEED_VERSION);
+		set_time_limit (0);
+		wp_schedule_event (time(), 'daily', 'refresh_articles');
 		Guardian_ContentAPI_refresh_articles();
 	}
 	
@@ -398,7 +326,7 @@
 	function my_deactivation() {
 		set_time_limit  (0);
 		wp_clear_scheduled_hook('refresh_articles');
-		Guardian_ContentAPI_remove_articles();
+		Guardian_ContentAPI_refresh_articles(false);
 	}
 
 	register_sidebar_widget ( __ ( 'The Guardian News Feed - Related Articles' ), 'widget_Guardian_Related' );
