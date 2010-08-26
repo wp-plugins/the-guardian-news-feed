@@ -203,11 +203,9 @@
     		}
     		$tagarray = implode(', ', $tagarray);
     		
-    		$postcontent = "<p><em><strong>PLEASE NOTE</strong>: Add your own commentary here above the horizontal line, but do not make any changes below the line.  (Of course, you should also delete this text before you publish this post.)</em></p>\n\n";
-    		
-        	$postcontent .= "<hr /><!-- GUARDIAN WATERMARK -->";
-    		
-        	$postcontent .= "<p><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />";
+    		$postcontent = "<p><em><strong>PLEASE NOTE</strong>: Add your own commentary here above the horizontal line, but do not make any changes below the line.  (Of course, you should also delete this text before you publish this post.)</em></p><hr>";
+    		    		
+        	$postcontent .= "<!-- GUARDIAN WATERMARK --><h2>{$article ['fields'] ['headline']}</h2><p><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />";
         	$postcontent .= "<a href=\"{$article ['webUrl']}\">This article was written by {$article ['fields'] ['byline']}, for {$article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($article ['webPublicationDate']))."</a></p>";
         	
         	
@@ -226,8 +224,7 @@
         	}
         	
         	$postcontent .= $article ['fields'] ['body'];
-        	$postcontent .= "<p>guardian.co.uk &#169; Guardian News and Media Limited 2010</p>";
-        	$postcontent .= "<!-- END GUARDIAN WATERMARK -->";
+        	$postcontent .= "<p>guardian.co.uk &#169; Guardian News and Media Limited 2010</p><!-- END GUARDIAN WATERMARK -->";
         	        	
     		$data = array(
         		'ID' => null,
@@ -269,23 +266,16 @@
      * Function to retrieve the publishing guidelines as well as display updates about the API.
      */
     function Guardian_Dynamic_Text() {
-    	$file = wp_remote_retrieve_body( wp_remote_get('http://static.guim.co.uk/openplatform/wp-plugin/notices.txt') );
+    	
+    	$file = wp_remote_retrieve_body( wp_remote_get('http://static.guim.co.uk/openplatform/wp-plugin/'.str_replace('.', '-', get_option('GUARDIAN_NEWS_FEED_VERSION')).'.txt') );
+    	
     	$file_arr = explode('=====', $file);
     	
-    	$version = trim($file_arr[0]);
+    	$publishing_guidelines = $file_arr[0];
+    	$update_message = str_replace('{plugins_url}', admin_url("plugins.php"), $file_arr[1]);
     	
-    	$publishing_guidelines = $file_arr[1];
-    	$error_message = $file_arr[2];
-    	$got_latest_message = $file_arr[3];
-    	$update_message = str_replace('{plugins_url}', admin_url("plugins.php"), $file_arr[4]);
-    	
-    	if ($version == get_option('GUARDIAN_NEWS_FEED_VERSION')) {
+    	if (!empty($update_message)) {
     		echo "<div class=\"updated\">{$got_latest_message}</div>";
-    	} else {
-	    	if (!empty($error_message)) {
-	    		echo "<div class=\"error\">{$error_message}</div>";
-	    	}
-	    	echo "<div class=\"updated\">{$update_message}</div>";
     	}
     	
     	return $publishing_guidelines;

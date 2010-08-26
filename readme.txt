@@ -67,17 +67,18 @@ And there is a Google Group where you can post questions here:
 == Changelog ==
 
 = 0.4 =
-* Better support for JSON under older versions of PHP or Wordpress
-* Changed Guardian short url to full url in publishing articles
-* Improved fallbacks to ensure a post excerpt is included
+* Headline is now included in the body so you can write your own blog title
+* Headlines and Excerpts are not over-written in any scenario
+* Guardian short URL is replaced with the long URL
+* Improved compatibility with Wordpress versions
 
 = 0.3 =
 * Relies more on Wordpress functions (less error prone)
 * Bug fix to allow filtering by section
 * Give thumbnails fixed width and height
 * Modified refresh function to remove post revisions on published posts.
-* Changed image for reverse Guardian Logo
-* Imporved version control
+* Changed image for reverse Guardian logo
+* Improved version control
 
 = 0.2 =
 

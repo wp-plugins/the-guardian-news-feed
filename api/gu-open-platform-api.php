@@ -15,11 +15,6 @@
  *  
  */
 
-/*
- * Include the Wordpress built in Json class if needed.
- */
-include (ABSPATH."/wp-includes/class-json.php");
-
 class GuardianOpenPlatformAPI {
     
     /**
@@ -172,27 +167,12 @@ class GuardianOpenPlatformAPI {
     
     /**
      * Function that takes the JSON encoding and turns is into an associative array
-     * Needs Wordpress 2.9.1 for the /wp-includes/class-json.php file.
      * 
      * @param $str_api_url 		A string to grab and convert
      */
-    public function convertJson ($str_api_url) {
-    	
-    	$data = file_get_contents ( $str_api_url );
-    	
-		// Future-friendly json_decode
-		if( !function_exists('json_decode') ) {
-		    function json_decode($data, $bool) {
-		        if ($bool) {
-		            $json = new Services_JSON(SERVICES_JSON_LOOSE_TYPE);
-		        } else {
-		            $json = new Services_JSON();
-		        }
-		        return ( $json->decode($data) );
-		    }
-		} else {
-			 return ( json_decode($data, true) );
-		}
+    public function convertJson ($str_api_url) {    	
+    	$data = wp_remote_retrieve_body( wp_remote_get($str_api_url) );
+		return ( json_decode($data, true) );
     }
     
     

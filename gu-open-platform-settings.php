@@ -57,7 +57,7 @@
  *
  */
 
-	define('GUARDIAN_NEWS_FEED_VERSION', '0.3');
+	define('GUARDIAN_NEWS_FEED_VERSION', '0.4');
 
 	include('gu-open-platform-article-importer.php');
 	include('gu-open-platform-related.php');
@@ -232,13 +232,11 @@
 					 
 					if (empty($arr_guard_article ['fields'] ['body']) || $arr_guard_article ['fields'] ['body'] == '<!-- Redistribution rights for this field are unavailable -->') {
 						$new_content = "<p><strong>The content previously published here has been withdrawn.  We apologise for any inconvenience.</strong></p>";
-						$arr_guard_article ['fields'] ['headline'] = "This article has been withdrawn";
-						$arr_guard_article ['fields'] ['standfirst'] = "<p>The content previously published here has been withdrawn.  We apologise for any inconvenience.</p>";						
 						$tagarray = array();
 					} else {
 						
 						// Article is fine and well						
-						$new_content = "<p><a href=\"{$arr_guard_article ['webUrl']}\"><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />This article was written by {$arr_guard_article ['fields'] ['byline']}, for {$arr_guard_article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($arr_guard_article ['webPublicationDate']))."</a></p>";
+						$new_content = "<h2>{$arr_guard_article ['fields'] ['headline']}</h2><p><a href=\"{$arr_guard_article ['webUrl']}\"><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />This article was written by {$arr_guard_article ['fields'] ['byline']}, for {$arr_guard_article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($arr_guard_article ['webPublicationDate']))."</a></p>";
 						
 				    	if (!empty($arr_guard_article['mediaAssets'])) {
 				        	foreach ($arr_guard_article['mediaAssets'] as $media) {
@@ -252,16 +250,9 @@
 					}
 					$replace = guardian_article_replace($post['post_content'],  $new_content);
 					
-					// Defaults to trailtext if standfirst is empty
-		    		if (empty($arr_guard_article ['fields'] ['standfirst'])) {
-		        		$arr_guard_article ['fields'] ['standfirst'] = $arr_guard_article ['fields'] ['trailText'];
-		        	}
-		        	
 					$data = array(
 	        			'ID' => $article['post_id'],
 						'post_content' => $replace,
-	        			'post_title' => $arr_guard_article ['fields'] ['headline'],
-	        			'post_excerpt' => $arr_guard_article ['fields'] ['standfirst'],
 	        			'tags_input' => $tagarray,
 	        			'post_author'=>$post['post_author']
 					);
@@ -281,9 +272,6 @@
 							$data = array(
 						       	'ID' => $article['post_id'],
 					    		'post_content' => $post['post_content'],
-						       	'post_title' => "This article has been withdrawn",
-						        'post_excerpt' => "<p>The content previously published here has been withdrawn.  We apologise for any inconvenience.</p>",
-						        'tags_input' => array(),
 						        'post_author'=>$post['post_author']
 							);
 							wp_update_post($data);
