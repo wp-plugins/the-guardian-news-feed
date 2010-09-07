@@ -68,7 +68,7 @@ And there is a Google Group where you can post questions here:
 
 = 0.4 =
 * Headline is now included in the body so you can write your own blog title
-* Headlines and Excerpts are not over-written in any scenario
+* Headlines / Excerpts & Tags are not over-written in any scenario
 * Guardian short URL is replaced with the long URL
 * Improved compatibility with Wordpress versions
 
