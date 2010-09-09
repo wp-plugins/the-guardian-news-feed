@@ -245,7 +245,7 @@
 				        	}
 				        }
 				        $new_content .= $arr_guard_article ['fields'] ['body'];
-				        $new_content .= "<p>guardian.co.uk &#169; Guardian News &amp; Media Limited 2010</p> <p>Pubished via the <a href=\"http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin\" target=\"_blank\" title=\"Guardian plugin page\">Guardian News Feed</a> <a href=\"http://wordpress.org/extend/plugins/the-guardian-news-feed/\" target=\"_blank\" title=\"Wordress plugin page\" >plugin</a> for WordPress.</p>";
+				        $new_content .= "<p>guardian.co.uk &#169; Guardian News &amp; Media Limited 2010</p> <p>Published via the <a href=\"http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin\" target=\"_blank\" title=\"Guardian plugin page\">Guardian News Feed</a> <a href=\"http://wordpress.org/extend/plugins/the-guardian-news-feed/\" target=\"_blank\" title=\"Wordress plugin page\" >plugin</a> for WordPress.</p>";
 					}
 					$replace = guardian_article_replace($post['post_content'],  $new_content);
 					
@@ -280,7 +280,7 @@
 				        	}
 				        }
 				        $new_content .= $arr_guard_article ['fields'] ['body'];
-				        $new_content .= "<p>guardian.co.uk &#169; Guardian News &amp; Media Limited 2010</p> <p>Pubished via the <a href=\"http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin\" target=\"_blank\" title=\"Guardian plugin page\">Guardian News Feed</a> <a href=\"http://wordpress.org/extend/plugins/the-guardian-news-feed/\" target=\"_blank\" title=\"Wordress plugin page\" >plugin</a> for WordPress.</p>";
+				        $new_content .= "<p>guardian.co.uk &#169; Guardian News &amp; Media Limited 2010</p> <p>Published via the <a href=\"http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin\" target=\"_blank\" title=\"Guardian plugin page\">Guardian News Feed</a> <a href=\"http://wordpress.org/extend/plugins/the-guardian-news-feed/\" target=\"_blank\" title=\"Wordress plugin page\" >plugin</a> for WordPress.</p>";
 					}
 					$replace = guardian_article_replace($post['post_content'],  $new_content);
 					
