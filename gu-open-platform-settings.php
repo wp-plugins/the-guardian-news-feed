@@ -5,7 +5,7 @@
  * Plugin URI: http://www.guardian.co.uk/open-platform
  * Description: Publish articles and related links from the Guardian directly to your blog.  
  * Author: Daniel Levitt for Guardian News and Media Ltd
- * Version: 0.4
+ * Version: 0.4.1
  * Author URI: http://www.guardian.co.uk/open-platform
  */
 
@@ -189,7 +189,7 @@
 	 *
 	 * This function should be scheduled for daily access
 	 */
-	function Guardian_ContentAPI_refresh_articles($update_article = true) {
+	function Guardian_ContentAPI_refresh_articles($update_article = true, $activate = false) {
 		 
 		global $wpdb;
 		 
@@ -216,8 +216,7 @@
 					$arr_guard_article = $api->guardian_api_item($article['meta_value']);
 					sleep(1);
 				}
-				
-				if (!empty($arr_guard_article) && $update_article) {
+				if ($activate) {
 					
 					// Get the tags
 					$tags = $arr_guard_article ['tags'];
@@ -236,7 +235,7 @@
 					} else {
 						
 						// Article is fine and well						
-						$new_content = "<h2>{$arr_guard_article ['fields'] ['headline']}</h2><p><a href=\"{$arr_guard_article ['webUrl']}\"><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />This article was written by {$arr_guard_article ['fields'] ['byline']}, for {$arr_guard_article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($arr_guard_article ['webPublicationDate']))."</a></p>";
+						$new_content = "<p><a href=\"{$arr_guard_article ['webUrl']}\"><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />This article titled \"{$arr_guard_article ['fields'] ['headline']}\" was written by {$arr_guard_article ['fields'] ['byline']}, for {$arr_guard_article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($arr_guard_article ['webPublicationDate']))."</a></p>";
 						
 				    	if (!empty($arr_guard_article['mediaAssets'])) {
 				        	foreach ($arr_guard_article['mediaAssets'] as $media) {
@@ -246,14 +245,48 @@
 				        	}
 				        }
 				        $new_content .= $arr_guard_article ['fields'] ['body'];
-				        $new_content .= "guardian.co.uk &#169; Guardian News &amp; Media Limited 2010";
+				        $new_content .= "<p>guardian.co.uk &#169; Guardian News &amp; Media Limited 2010</p> <p>Published via the <a href=\"http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin\" target=\"_blank\" title=\"Guardian plugin page\">Guardian News Feed</a> <a href=\"http://wordpress.org/extend/plugins/the-guardian-news-feed/\" target=\"_blank\" title=\"Wordress plugin page\" >plugin</a> for WordPress.</p>";
+					}
+					$replace = guardian_article_replace($post['post_content'],  $new_content);
+					
+					$data = array(
+	        			'ID' => $article['post_id'],
+						'post_title' => $arr_guard_article ['fields'] ['headline'],
+						'post_content' => $replace,
+	        			'tags_input' => $tagarray,
+	        			'post_author'=>$post['post_author']
+					);
+					wp_update_post($data);
+					
+					// Delete revisions
+					$sql = "DELETE a,b,c FROM $wpdb->posts a LEFT JOIN $wpdb->term_relationships b ON (a.ID = b.object_id) LEFT JOIN $wpdb->postmeta c ON (a.ID = c.post_id) WHERE a.post_type = 'revision' AND a.post_parent = {$article['post_id']}";
+					$wpdb->query($sql);
+					
+					
+				} elseif (!empty($arr_guard_article) && $update_article) {
+					
+					if (empty($arr_guard_article ['fields'] ['body']) || $arr_guard_article ['fields'] ['body'] == '<!-- Redistribution rights for this field are unavailable -->') {
+						$new_content = "<p><strong>The content previously published here has been withdrawn.  We apologise for any inconvenience.</strong></p>";
+					} else {
+						
+						// Article is fine and well						
+						$new_content = "<p><a href=\"{$arr_guard_article ['webUrl']}\"><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />This article titled \"{$arr_guard_article ['fields'] ['headline']}\" was written by {$arr_guard_article ['fields'] ['byline']}, for {$arr_guard_article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($arr_guard_article ['webPublicationDate']))."</a></p>";
+						
+				    	if (!empty($arr_guard_article['mediaAssets'])) {
+				        	foreach ($arr_guard_article['mediaAssets'] as $media) {
+				        		if ($media['type'] == 'picture') {
+				        			$new_content .= "<img src=\"{$media['file']}\" class=\"aligncenter\" alt=\"{$media['fields']['caption']}\">";
+				        		}
+				        	}
+				        }
+				        $new_content .= $arr_guard_article ['fields'] ['body'];
+				        $new_content .= "<p>guardian.co.uk &#169; Guardian News &amp; Media Limited 2010</p> <p>Published via the <a href=\"http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin\" target=\"_blank\" title=\"Guardian plugin page\">Guardian News Feed</a> <a href=\"http://wordpress.org/extend/plugins/the-guardian-news-feed/\" target=\"_blank\" title=\"Wordress plugin page\" >plugin</a> for WordPress.</p>";
 					}
 					$replace = guardian_article_replace($post['post_content'],  $new_content);
 					
 					$data = array(
 	        			'ID' => $article['post_id'],
 						'post_content' => $replace,
-	        			'tags_input' => $tagarray,
 	        			'post_author'=>$post['post_author']
 					);
 					wp_update_post($data);
@@ -338,8 +371,8 @@
 	function activate_guardian_scheduling() {
 		update_option ('GUARDIAN_NEWS_FEED_VERSION', GUARDIAN_NEWS_FEED_VERSION);
 		set_time_limit (0);
+		Guardian_ContentAPI_refresh_articles(true, true);
 		wp_schedule_event (time(), 'daily', 'refresh_articles');
-		Guardian_ContentAPI_refresh_articles();
 	}
 	
 	/*
@@ -349,8 +382,8 @@
 	
 	function my_deactivation() {
 		set_time_limit  (0);
-		wp_clear_scheduled_hook('refresh_articles');
 		Guardian_ContentAPI_refresh_articles(false);
+		wp_clear_scheduled_hook('refresh_articles');
 	}
 
 	register_sidebar_widget ( __ ( 'The Guardian News Feed - Related Articles' ), 'widget_Guardian_Related' );

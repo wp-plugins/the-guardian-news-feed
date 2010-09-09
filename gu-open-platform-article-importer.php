@@ -72,6 +72,17 @@
 	    		'show-fields' => 'headline,standfirst,trail-text,thumbnail',
 	    		'show-refinements' => 'all'
 	    	);
+	    	
+	    	/*
+	    	 * TODO
+	    	 * Top Stories addition needs more work before release
+	    	 * 
+	    	echo "<p>You can see the <a href=\"{$_SERVER['PHP_SELF']}?page={$_GET['page']}&top-stories=yes\">top stories on the Guardian by clicking here.</a></p>";
+	    	if ($_GET['top-stories'] == 'yes') {
+	    		$options['show-editors-picks'] = 'true';
+	    	}
+	    	 */
+	    	
 	    	$articles = $api->guardian_api_search($options);
 	    	
 	    	guardian_can_user_publish($articles['userTier']);
@@ -205,8 +216,8 @@
     		
     		$postcontent = "<p><em><strong>PLEASE NOTE</strong>: Add your own commentary here above the horizontal line, but do not make any changes below the line.  (Of course, you should also delete this text before you publish this post.)</em></p><hr>";
     		    		
-        	$postcontent .= "<!-- GUARDIAN WATERMARK --><h2>{$article ['fields'] ['headline']}</h2><p><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />";
-        	$postcontent .= "<a href=\"{$article ['webUrl']}\">This article was written by {$article ['fields'] ['byline']}, for {$article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($article ['webPublicationDate']))."</a></p>";
+        	$postcontent .= "<!-- GUARDIAN WATERMARK --><p><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />";
+        	$postcontent .= "<a href=\"{$article ['webUrl']}\">This article titled \"{$article ['fields'] ['headline']}\" was written by {$article ['fields'] ['byline']}, for {$article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($article ['webPublicationDate']))."</a></p>";
         	
         	
         	// Defaults to trailtext if standfirst is empty
@@ -224,7 +235,7 @@
         	}
         	
         	$postcontent .= $article ['fields'] ['body'];
-        	$postcontent .= "<p>guardian.co.uk &#169; Guardian News and Media Limited 2010</p><!-- END GUARDIAN WATERMARK -->";
+        	$postcontent .= "<p>guardian.co.uk &#169; Guardian News &amp; Media Limited 2010</p> <p>Published via the <a href=\"http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin\" target=\"_blank\" title=\"Guardian plugin page\">Guardian News Feed</a> <a href=\"http://wordpress.org/extend/plugins/the-guardian-news-feed/\" target=\"_blank\" title=\"Wordress plugin page\" >plugin</a> for WordPress.</p><!-- END GUARDIAN WATERMARK -->";
         	        	
     		$data = array(
         		'ID' => null,
@@ -268,14 +279,13 @@
     function Guardian_Dynamic_Text() {
     	
     	$file = wp_remote_retrieve_body( wp_remote_get('http://static.guim.co.uk/openplatform/wp-plugin/'.str_replace('.', '-', get_option('GUARDIAN_NEWS_FEED_VERSION')).'.txt') );
-    	
     	$file_arr = explode('=====', $file);
     	
     	$publishing_guidelines = $file_arr[0];
     	$update_message = str_replace('{plugins_url}', admin_url("plugins.php"), $file_arr[1]);
     	
     	if (!empty($update_message)) {
-    		echo "<div class=\"updated\">{$got_latest_message}</div>";
+    		echo "<div class=\"updated\">{$update_message}</div>";
     	}
     	
     	return $publishing_guidelines;
