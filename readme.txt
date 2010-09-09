@@ -5,7 +5,7 @@ Donate link:
 Tags: news
 Requires at least: 2.5
 Tested up to: 3.0
-Stable tag: 0.4
+Stable tag: 0.4.1
 
 The Guardian News Feed plug-in enables you to publish articles by the Guardian directly to your blog.
 
