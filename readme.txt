@@ -3,8 +3,8 @@ Contributors: bluedaniel, openplatform
 More info: http://www.guardian.co.uk/open-platform
 Donate link:
 Tags: news
-Requires at least: 2.5
-Tested up to: 3.0
+Requires at least: 2.8
+Tested up to: 3.3.1
 Stable tag: 0.4.1
 
 The Guardian News Feed plug-in enables you to publish articles by the Guardian directly to your blog.
@@ -65,6 +65,9 @@ And there is a Google Group where you can post questions here:
 <a href="http://groups.google.com/group/guardian-api-talk">http://groups.google.com/group/guardian-api-talk</a>
 
 == Changelog ==
+
+= 0.4.2=
+* Security fix for a cross-site scripting vulnerability in the admin pages
 
 = 0.4 =
 * Headline is now included in the body so you can write your own blog title
