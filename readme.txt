@@ -66,10 +66,10 @@ And there is a Google Group where you can post questions here:
 
 == Changelog ==
 
-= 0.4.3=
+= 0.4.3 =
 * Replace use of short_tags with full tags to improve windows compatibility
 
-= 0.4.2=
+= 0.4.2 =
 * Security fix for a cross-site scripting vulnerability in the admin pages
 
 = 0.4 =
