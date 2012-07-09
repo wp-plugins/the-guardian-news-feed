@@ -99,13 +99,13 @@ $safe_url = esc_url($_SERVER['PHP_SELF']);
 	    	?>
     		<p>Want news? Find something you like below, click 'Save to Drafts' and then publish away.</p>
 
-	    	<form action="<?= $safe_url ?>" method="get" id="search-plugins">
+	    	<form action="<?php echo $safe_url ?>" method="get" id="search-plugins">
 
-	    		<input type="text" value="<?= $s ?>" name="s" size="50">
+	    		<input type="text" value="<?php echo $s ?>" name="s" size="50">
 	    		<label for="plugin-search-input" class="screen-reader-text">Search</label>
-	    		<input type="hidden" name="tag" value="<?= $tag ?>"></input>
-	    		<input type="hidden" name="section" value="<?= $section ?>"></input>
-	    		<input type="hidden" name="page" value="<?= $page ?>"></input>
+	    		<input type="hidden" name="tag" value="<?php echo $tag ?>"></input>
+	    		<input type="hidden" name="section" value="<?php echo $section ?>"></input>
+	    		<input type="hidden" name="page" value="<?php echo $page ?>"></input>
 	    		<input type="submit" class="button" value="Search Articles">
 
 	    	</form>
@@ -129,8 +129,8 @@ $safe_url = esc_url($_SERVER['PHP_SELF']);
 	    	<div id="poststuff" class="metaebox-holder has-right-sidebar">
 	    		<div id="side-info-column" class="inner-sidebar">
     				<div id="side-sortables" class="meta-box-sortables ui-sortable">
-			    		<?= render_publishing_message($publishing_guidelines); ?>
-				    	<?= render_refinements($articles); ?>
+			    		<?php echo render_publishing_message($publishing_guidelines); ?>
+				    	<?php echo render_refinements($articles); ?>
 				    </div>
 				</div>
 			</div>
@@ -140,22 +140,22 @@ $safe_url = esc_url($_SERVER['PHP_SELF']);
 		    	<table cellspacing="0" id="install-plugins" class="widefat" style="clear:none;">
 		    		<thead>
 		    			<tr>
-		    				<?= $headfoot; ?>
+		    				<?php echo $headfoot; ?>
 		    			</tr>
 		    		</thead>
 
 		    		<tfoot>
 		    			<tr>
-		    				<?= $headfoot; ?>
+		    				<?php echo $headfoot; ?>
 		    			</tr>
 		    		</tfoot>
 
 		    		<tbody class="plugins">
-		    		<?= render_contentapi_search($articles);	?>
+		    		<?php echo render_contentapi_search($articles);	?>
 		    		</tbody>
 		    	</table>
 		    	<br/>
-		    	<?= render_simple_pagination($articles['currentPage'], $articles['pages'], $link) ?>
+		    	<?php echo render_simple_pagination($articles['currentPage'], $articles['pages'], $link) ?>
 		    </div>
 
 		</div>
