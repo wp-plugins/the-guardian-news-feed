@@ -4,10 +4,12 @@ More info: http://www.guardian.co.uk/open-platform
 Donate link:
 Tags: news
 Requires at least: 2.8
-Tested up to: 3.3.1
-Stable tag: 0.4.3
+Tested up to: 3.8
+Stable tag: 0.5.1
 
 The Guardian News Feed plug-in enables you to publish articles by the Guardian directly to your blog.
+
+You can contribute to the development over at Github - <a href="http://groups.google.com/group/guardian-api-talk">https://github.com/bluedaniel/The-Guardian-News-Feed</a>.
 
 == Description ==
 
@@ -65,6 +67,11 @@ And there is a Google Group where you can post questions here:
 <a href="http://groups.google.com/group/guardian-api-talk">http://groups.google.com/group/guardian-api-talk</a>
 
 == Changelog ==
+
+= 0.5 =
+* Big fix for API change of fields
+* Images being imported into posts fixed
+* Rendering of search results fixed
 
 = 0.4.3 =
 * Replace use of short_tags with full tags to improve windows compatibility
