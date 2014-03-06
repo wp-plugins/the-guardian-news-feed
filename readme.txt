@@ -5,7 +5,7 @@ Donate link:
 Tags: news
 Requires at least: 2.8
 Tested up to: 3.8.1
-Stable tag: 0.5.2
+Stable tag: 0.5.3
 
 The Guardian News Feed plug-in enables you to publish articles by the Guardian directly to your blog.
 
@@ -67,6 +67,9 @@ And there is a Google Group where you can post questions here:
 <a href="http://groups.google.com/group/guardian-api-talk">http://groups.google.com/group/guardian-api-talk</a>
 
 == Changelog ==
+
+= 0.5.3 =
+* Updating app version number
 
 = 0.5.2 =
 * Fixing Github link!
