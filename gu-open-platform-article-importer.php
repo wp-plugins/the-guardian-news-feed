@@ -16,8 +16,6 @@
  *       - Changes. You mustn't remove or alter the text, links or images you get from us.
  *       - Key. If you don't have a key, get one here: http://www.guardian.co.uk/open-platform. It's required.
  *         If you do have one, please don't share it or use it anywhere else.
- *       - Ads. Articles come with ads and performance tracking embedded in them. As above, you mustn't
- *         change or remove them. You can, of course, use your own ads elsewhere on your blog, too.
  *       - Deletions. Sometimes but very rarely we have to remove articles. When that happens, this plug-in
  *         will replace the Guardian content within your blog post with a message saying that the content is
  *         not available anymore.
@@ -54,6 +52,10 @@ $section = '';
 if(isset($_GET['section'])) {
     $section = esc_attr($_GET['section']);
 }
+$order = '';
+if(isset($_GET['order'])) {
+    $order = esc_attr($_GET['order']);
+}
 $p = 1;
 if(isset($_GET['p'])) {
     $p = esc_attr($_GET['p']);
@@ -74,7 +76,7 @@ $safe_url = esc_url($_SERVER['PHP_SELF']);
  *
  */
 function Guardian_ContentAPI_admin_page() {
-    global $s, $tag, $section, $page, $p, $safe_url, $contentid;
+    global $s, $tag, $section, $order, $page, $p, $safe_url, $contentid;
     ?>
     <div class="wrap">
 
@@ -137,10 +139,17 @@ function Guardian_ContentAPI_admin_page() {
         $sectionOptions[''] = 'All sections';
         asort($sectionOptions);
 
+        $orderOptions = array(
+          'newest' => 'Newest',
+          'oldest' => 'Oldest',
+          'relevance' => 'Relevance'
+        );
+
         $options = array(
             'format' => 'json',
             'show-fields' => 'headline,standfirst,trail-text,thumbnail,byline',
             'show-tags' => 'keyword',
+            'order-by' => 'newest',
             'page' => $p
         );
 
@@ -152,6 +161,9 @@ function Guardian_ContentAPI_admin_page() {
         }
         if ($section) {
           $options['section'] = $section;
+        }
+        if ($order) {
+          $options['order-by'] = $order;
         }
         $articles = $api->guardian_api_search($options);
 
@@ -183,6 +195,18 @@ function Guardian_ContentAPI_admin_page() {
               }
               ?>
             </select>
+            <select name="order" id="order">
+              <?php
+              foreach($orderOptions as $key => $val) {
+                $selected = "";
+                if($key === $order) {
+                  $selected = "selected=\"selected\"";
+                }
+                echo "<option value=\"{$key}\" {$selected}>{$val}</option>";
+              }
+              ?>
+            </select>
+
             <input type="submit" class="button" value="Search">
 
         </form>
@@ -198,7 +222,7 @@ function Guardian_ContentAPI_admin_page() {
 
         $headfoot = implode("\n", $headfoot);
 
-        $link = "{$safe_url}?page={$page}&s={$s}&tag={$tag}&section={$section}";
+        $link = "{$safe_url}?page={$page}&s={$s}&tag={$tag}&section={$section}&order={$order}";
         echo render_pagination( $articles['currentPage'], $articles['pages'], $articles['total'], $link, $articles['startIndex'], $articles['startIndex']+count($articles['results'])-1 ); ?>
         <hr />
 
@@ -238,7 +262,6 @@ function Guardian_ContentAPI_admin_page() {
                                     <ol>
                                         <li><strong>Changes:</strong> You mustn't remove or alter the text, links or images you get from us.</li>
                                         <li><strong>Key:</strong> If you don't have a key, get one <a href="http://www.guardian.co.uk/open-platform" target="_blank">here</a>. It's required. If you do have one, please don't share it or use it anywhere else.</li>
-                                        <li><strong>Ads:</strong> Articles come with ads and performance tracking embedded in them. As above, you mustn't change or remove them. You can, of course, use your own ads elsewhere on your blog, too.</li>
                                         <li><strong>Deletions:</strong> Sometimes but very rarely we have to remove articles. When that happens, this plug-in will replace the withdrawn Guardian content within your blog post with a message saying that the content is not available anymore.</li>
                                     </ol>
                                     <p>If you want to know more, please read the <a href="http://www.guardian.co.uk/open-platform/faq" target="_blank">FAQ</a> or post questions to our <a href="http://groups.google.com/group/guardian-api-talk/" target="_blank">Google Group</a>.</p>
@@ -551,7 +574,7 @@ function render_refinements($articles) {
                 if ($tagLink[strlen($tagLink)-1] == ',') {
                     $tagLink = substr($tagLink, 0, -1);
                 }
-                $link = "{$safe_url}?page={$page}&s={$s}&section={$section}&tag={$tagLink}";
+                $link = "{$safe_url}?page={$page}&order={$order}&s={$s}&section={$section}&tag={$tagLink}";
                 $output[] = "				<span><a class=\"ntdelbutton\" href=\"{$link}\" id=\"post_tag-check-num-0\">X</a>&nbsp;{$t}</span>";
             }
             $output[] = "			</div>";
@@ -559,7 +582,7 @@ function render_refinements($articles) {
         }
 
         if (!empty($s)) {
-            $link = "{$safe_url}?page={$page}&s=&tag={$tag}&section={$section}";
+            $link = "{$safe_url}?page={$page}&order={$order}&s=&tag={$tag}&section={$section}";
             $output[] = "		<div class=\"misc-pub-section\">";
             $output[] = "			<p>Current Search Term:</p>";
             $output[] = "			<div class=\"tagchecklist\">";
@@ -569,7 +592,7 @@ function render_refinements($articles) {
         }
 
         if (!empty($section)) {
-            $link = "{$safe_url}?page={$page}&s={$s}&tag={$tag}&section=";
+            $link = "{$safe_url}?page={$page}&order={$order}&s={$s}&tag={$tag}&section=";
             $output[] = "		<div class=\"misc-pub-section\">";
             $output[] = "			<p>Selected Section:</p>";
             $output[] = "			<div class=\"tagchecklist\">";
@@ -591,7 +614,7 @@ function render_refinements($articles) {
                     } else {
                         $sectionLink = $refinementItem['id'];
                     }
-                    $link = "{$safe_url}?page={$page}&s={$s}&tag={$tag}&section={$sectionLink}";
+                    $link = "{$safe_url}?page={$page}&order={$order}&s={$s}&tag={$tag}&section={$sectionLink}";
                     $output[] = "		<p><a href=\"{$link}\">{$refinementItem['displayName']}</a> (".number_format($refinementItem['count']).")</p>";
                     $sectionLink = '';
                 } else {
@@ -600,7 +623,7 @@ function render_refinements($articles) {
                     } else {
                         $tagLink = $refinementItem['id'];
                     }
-                    $link = "{$safe_url}?page={$page}&s={$s}&tag={$tagLink}&section={$section}";
+                    $link = "{$safe_url}?page={$page}&order={$order}&s={$s}&tag={$tagLink}&section={$section}";
                     $output[] = "		<p><a href=\"{$link}\">{$refinementItem['displayName']}</a> (".number_format($refinementItem['count']).")</p>";
                     $tagLink = '';
                 }
