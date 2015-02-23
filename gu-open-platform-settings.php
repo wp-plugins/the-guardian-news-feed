@@ -5,7 +5,7 @@
  * Plugin URI: http://www.guardian.co.uk/open-platform
  * Description: Publish articles and related links from the Guardian directly to your blog.
  * Author: Daniel Levitt for Guardian News and Media Ltd
- * Version: 0.5.3
+ * Version: 1.2
  * Author URI: http://www.guardian.co.uk/open-platform
  */
 
@@ -26,8 +26,6 @@
  *       - Changes. You mustn't remove or alter the text, links or images you get from us.
  *       - Key. If you don't have a key, get one here: http://www.guardian.co.uk/open-platform. It's required.
  *         If you do have one, please don't share it or use it anywhere else.
- *       - Ads. Articles come with ads and performance tracking embedded in them. As above, you mustn't
- *         change or remove them. You can, of course, use your own ads elsewhere on your blog, too.
  *       - Deletions. Sometimes but very rarely we have to remove articles. When that happens, this plug-in
  *         will replace the Guardian content within your blog post with a message saying that the content is
  *         not available anymore.
@@ -62,20 +60,23 @@ include('gu-open-platform-related.php');
 include("api". DIRECTORY_SEPARATOR ."gu-open-platform-api.php");
 
 define ('GUARD_DIR', dirname(__FILE__));
+define ('PREVIEW_KEY_MESSAGE', '<strong>A valid API key is required</strong>.<br>To get your access key <a href="%s" target="_blank">click here</a> and go through the registration process. You can then enter your key in the <a href="%s">plugin settings</a>.');
+define ('PREVIEW_KEY_MESSAGE_SETTINGS', admin_url('options-general.php?page=the-guardian-news-feed/gu-open-platform-settings.php'));
+define ('PREVIEW_KEY_MESSAGE_REGISTRATION', 'http://guardian.mashery.com/');
+define ('PREVIEW_KEY_MESSAGE_UPDATE', '<br><strong>Note:</strong> If your old key has stopped working, it is because we have updated our API and you can <a href="%s" target="_blank">register for a new key here</a>.');
 
 function Guardian_OpenPlatform_settings_page() {
 
     $api = new GuardianOpenPlatformAPI();
 
     if (isset($_POST ['Submit'])) {
+
+        $newKey = trim(esc_attr($_POST [$api->guardian_api_keynameValue()]));
+
         // Save the posted value in the database
-        update_option ( $api->guardian_api_keynameValue(), trim(esc_attr($_POST [$api->guardian_api_keynameValue()])) );
+        update_option ( $api->guardian_api_keynameValue(), $newKey );
         update_option ( 'guardian_powered_image', trim(esc_attr($_POST ['guardian_powered_image'])) );
-        // Put an options updated message on the screen
         ?>
-        <div class="updated">
-            <p><strong><?php _e ( 'Your API key has been saved.' ); ?></strong></p>
-        </div>
     <?php
     }
     // Read in new or existing option value from database
@@ -86,18 +87,21 @@ function Guardian_OpenPlatform_settings_page() {
     ?>
     <div class="wrap">
         <h2>The Guardian News Feed Configuration</h2>
+
+        <p>If you have any questions, please have a look through the <a target="_blank" href="http://www.guardian.co.uk/open-platform/faq">FAQ</a> or post your question in the <a target="_blank" href="http://groups.google.com/group/guardian-api-talk">Google Group</a>.</p>
+
         <?php
         if (!empty($str_api_key)) {
             $status = $api->guardian_get_tier();
-            if (!empty($status)) {
-                echo '	<p style="padding: 0.5em; background-color: rgb(34, 221, 34); color: rgb(255, 255, 255); font-weight: bold;">This key is valid.</p>';
+            if ($status) {
+                echo sprintf( '<div class="updated"><p>%s</p></div>', 'You have a valid key.' );
+            } else {
+                echo sprintf( '<div class="error"><p><strong>%s</strong></p></div>', 'Your key is invalid, please <a target="_blank" href="http://guardian.mashery.com">register for a new one</a>.' );
             }
+        } else {
+            echo sprintf( '<div class="error"><p><strong>%s</strong></p></div>', 'You need a valid key to use this plugin, please <a target="_blank" href="http://guardian.mashery.com">register for one</a>.' );
         }
         ?>
-        <p>In order to publish Guardian articles on your blog we require that you <a target="_blank" href="http://guardian.mashery.com">register</a> and agree to the <a target="_blank" href="http://www.guardian.co.uk/open-platform/terms-and-conditions">Terms and Conditions</a>.</p>
-        <p>The process only takes a few moments.  If you have any questions, please have a look through the <a target="_blank" href="http://www.guardian.co.uk/open-platform/faq">FAQ</a> or post your question in the <a target="_blank" href="http://groups.google.com/group/guardian-api-talk">Google Group</a>.</p>
-        <p>An API key is not required for the 'Related Articles' sidebar widget included in this plugin, you can use it straight away.</p>
-
 
         <form name="form1" method="post" action="">
             <table class="form-table">
@@ -172,16 +176,6 @@ function retrieve_api_key($str_api_keyname, $required = false) {
     return $str_result;
 }
 
-/*
- * Function to replace the old content with the new.
- *
- * @param $content			Old Content from DB
- * @param $new_content		New content from the API
- */
-function guardian_article_replace( $content, $new_content ) {
-    return trim(preg_replace("/<!-- GUARDIAN WATERMARK -->.*?<!-- END GUARDIAN WATERMARK -->/s", "<!-- GUARDIAN WATERMARK -->{$new_content}<!-- END GUARDIAN WATERMARK -->", $content));
-}
-
 /**
  * This is the function that reloads the blog posts from the API
  *
@@ -231,19 +225,8 @@ function Guardian_ContentAPI_refresh_articles($update_article = true, $activate 
                     $new_content = "<p><strong>The content previously published here has been withdrawn.  We apologise for any inconvenience.</strong></p>";
                     $tagarray = array();
                 } else {
-
                     // Article is fine and well
-                    $new_content = "<p><a href=\"{$arr_guard_article ['webUrl']}\"><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />This article titled \"{$arr_guard_article ['fields'] ['headline']}\" was written by {$arr_guard_article ['fields'] ['byline']}, for {$arr_guard_article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($arr_guard_article ['webPublicationDate']))."</a></p>";
-
-                    if (!empty($arr_guard_article['mediaAssets'])) {
-                        foreach ($arr_guard_article['mediaAssets'] as $media) {
-                            if ($media['type'] == 'picture') {
-                                $new_content .= "<img src=\"{$media['file']}\" class=\"aligncenter\" alt=\"{$media['fields']['caption']}\">";
-                            }
-                        }
-                    }
-                    $new_content .= $arr_guard_article ['fields'] ['body'];
-                    $new_content .= "<p>guardian.co.uk &#169; Guardian News &amp; Media Limited 2010</p> <p>Published via the <a href=\"http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin\" target=\"_blank\" title=\"Guardian plugin page\">Guardian News Feed</a> <a href=\"http://wordpress.org/extend/plugins/the-guardian-news-feed/\" target=\"_blank\" title=\"Wordress plugin page\" >plugin</a> for WordPress.</p>";
+                    $new_content = guardian_article_build($arr_guard_article);
                 }
                 $replace = guardian_article_replace($post['post_content'],  $new_content);
 
@@ -266,19 +249,8 @@ function Guardian_ContentAPI_refresh_articles($update_article = true, $activate 
                 if (empty($arr_guard_article ['fields'] ['body']) || $arr_guard_article ['fields'] ['body'] == '<!-- Redistribution rights for this field are unavailable -->') {
                     $new_content = "<p><strong>The content previously published here has been withdrawn.  We apologise for any inconvenience.</strong></p>";
                 } else {
-
                     // Article is fine and well
-                    $new_content = "<p><a href=\"{$arr_guard_article ['webUrl']}\"><img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian".get_option ( 'guardian_powered_image' ).".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />This article titled \"{$arr_guard_article ['fields'] ['headline']}\" was written by {$arr_guard_article ['fields'] ['byline']}, for {$arr_guard_article ['fields'] ['publication']} on ".date("l jS F Y H.i e", strtotime($arr_guard_article ['webPublicationDate']))."</a></p>";
-
-                    if (!empty($arr_guard_article['mediaAssets'])) {
-                        foreach ($arr_guard_article['mediaAssets'] as $media) {
-                            if ($media['type'] == 'picture') {
-                                $new_content .= "<img src=\"{$media['file']}\" class=\"aligncenter\" alt=\"{$media['fields']['caption']}\">";
-                            }
-                        }
-                    }
-                    $new_content .= $arr_guard_article ['fields'] ['body'];
-                    $new_content .= "<p>guardian.co.uk &#169; Guardian News &amp; Media Limited 2010</p> <p>Published via the <a href=\"http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin\" target=\"_blank\" title=\"Guardian plugin page\">Guardian News Feed</a> <a href=\"http://wordpress.org/extend/plugins/the-guardian-news-feed/\" target=\"_blank\" title=\"Wordress plugin page\" >plugin</a> for WordPress.</p>";
+                    $new_content = guardian_article_build($arr_guard_article);
                 }
                 $replace = guardian_article_replace($post['post_content'],  $new_content);
 
@@ -316,6 +288,41 @@ function Guardian_ContentAPI_refresh_articles($update_article = true, $activate 
     }
 }
 
+/*
+ * Function to replace the old content with the new.
+ *
+ * @param $content			Old Content from DB
+ * @param $new_content		New content from the API
+ */
+function guardian_article_replace( $content, $new_content ) {
+    return trim(preg_replace("/<!-- GUARDIAN WATERMARK -->.*?<!-- END GUARDIAN WATERMARK -->/s", "<!-- GUARDIAN WATERMARK -->{$new_content}<!-- END GUARDIAN WATERMARK -->", $content));
+}
+
+/*
+ * Function to build the article from the API into a Wordpress Post.
+ *
+ * @param $arr_guard_article  Content from the API
+ */
+function guardian_article_build($arr_guard_article) {
+    $new_content = array();
+    $new_content[] = "<p><a href=\"{$arr_guard_article ['webUrl']}\">";
+    $new_content[] = "<img class=\"alignright\" src=\"http://image.guardian.co.uk/sys-images/Guardian/Pix/pictures/2010/03/01/poweredbyguardian" . get_option('guardian_powered_image') . ".png\" alt=\"Powered by Guardian.co.uk\" width=\"140\" height=\"45\" />";
+    $new_content[] = "This article titled \"{$arr_guard_article['fields']['headline']}\" was written by {$arr_guard_article['fields']['byline']}";
+    $new_content[] = ", for {$arr_guard_article['fields']['publication']} on " . date("l jS F Y H.i e", strtotime($arr_guard_article['webPublicationDate']));
+    $new_content[] = "</a></p>";
+
+    if (!empty($arr_guard_article['mediaAssets'])) {
+        foreach ($arr_guard_article['mediaAssets'] as $media) {
+            if ($media['type'] == 'picture') {
+                $new_content[] = "<img src=\"{$media['file']}\" class=\"aligncenter\" alt=\"{$media['fields']['caption']}\">";
+            }
+        }
+    }
+    $new_content[] = $arr_guard_article['fields']['body'];
+    $new_content[] = "<p>guardian.co.uk &#169; Guardian News &amp; Media Limited 2010</p> <p>Published via the <a href=\"http://www.guardian.co.uk/open-platform/news-feed-wordpress-plugin\" target=\"_blank\" title=\"Guardian plugin page\">Guardian News Feed</a> <a href=\"http://wordpress.org/extend/plugins/the-guardian-news-feed/\" target=\"_blank\" title=\"Wordress plugin page\" >plugin</a> for WordPress.</p>";
+    return join("", $new_content);
+}
+
 // JSON support
 function guardian_id_got_json() {
     // WP 2.9+ handles everything for us
@@ -351,7 +358,7 @@ if ( !guardian_id_got_json() ) {
 function Guardian_OpenPlatform_add_pages() {
     global $wpdb;
     if (function_exists ( "add_submenu_page" )) {
-        add_submenu_page('plugins.php', __('The Guardian News Feed Configuration'), __('The Guardian News Feed Configuration'), 'manage_options', __FILE__, 'Guardian_OpenPlatform_settings_page');
+        add_submenu_page('options-general.php', __('Guardian News Feed'), __('Guardian News Feed'), 'manage_options', __FILE__, 'Guardian_OpenPlatform_settings_page');
     }
 }
 // Plugin admin menus

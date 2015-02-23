@@ -16,8 +16,6 @@
  *       - Changes. You mustn't remove or alter the text, links or images you get from us.
  *       - Key. If you don't have a key, get one here: http://www.guardian.co.uk/open-platform. It's required.
  *         If you do have one, please don't share it or use it anywhere else.
- *       - Ads. Articles come with ads and performance tracking embedded in them. As above, you mustn't
- *         change or remove them. You can, of course, use your own ads elsewhere on your blog, too.
  *       - Deletions. Sometimes but very rarely we have to remove articles. When that happens, this plug-in
  *         will replace the Guardian content within your blog post with a message saying that the content is
  *         not available anymore.
@@ -50,11 +48,23 @@ if(isset($_GET['s'])) {
 if(isset($_GET['tag'])) {
     $tag = esc_attr($_GET['tag']);
 }
+$section = '';
 if(isset($_GET['section'])) {
     $section = esc_attr($_GET['section']);
 }
+$order = '';
+if(isset($_GET['order'])) {
+    $order = esc_attr($_GET['order']);
+}
+$p = 1;
+if(isset($_GET['p'])) {
+    $p = esc_attr($_GET['p']);
+}
 if(isset($_GET['page'])) {
     $page = esc_attr($_GET['page']);
+}
+if(isset($_GET['contentid'])) {
+  $contentid = esc_attr($_GET ['contentid']);
 }
 $safe_url = esc_url($_SERVER['PHP_SELF']);
 
@@ -66,9 +76,42 @@ $safe_url = esc_url($_SERVER['PHP_SELF']);
  *
  */
 function Guardian_ContentAPI_admin_page() {
-    global $s, $tag, $section, $page, $safe_url;
+    global $s, $tag, $section, $order, $page, $p, $safe_url, $contentid;
     ?>
     <div class="wrap">
+
+      <style>
+      .githubLink, .settingsLink {
+        float:right;
+      }
+      .settingsLink {
+        margin-right: 10px;
+      }
+      .githubLink:before, .settingsLink:before {
+        content:"\f475";
+        display: inline-block;
+        -webkit-font-smoothing: antialiased;
+        font: normal 18px/1 'dashicons';
+        vertical-align: top;
+        margin-right: 3px;
+      }
+      .settingsLink:before {
+        content:"\f107";
+      }
+      .plugins td {
+        border-bottom: 1px solid #efefef;
+      }
+      .article-meta {
+        margin-top: 7px;
+        color: #888;
+        font-size: 12px;
+        font-style: italic;
+      }
+      </style>
+
+        <p class="githubLink"><a href="https://github.com/bluedaniel/The-Guardian-News-Feed">GitHub</a></p>
+        <p class="settingsLink"><a href="<?php echo PREVIEW_KEY_MESSAGE_SETTINGS ?>">Settings</a></p>
+
         <h2>The Guardian News Feed</h2>
 
         <?php
@@ -78,37 +121,93 @@ function Guardian_ContentAPI_admin_page() {
 
         $api = new GuardianOpenPlatformAPI($str_api_key);
 
-        $options = array(
-            'q' => $_GET['s'],
-            'tag' => $_GET['tag'],
-            'section' => $_GET['section'],
-            'format' => 'json',
-            'page' => $_GET['p'],
-            'show-fields' => 'headline,standfirst,trail-text,thumbnail',
-            //'show-refinements' => 'all'
+        $tier = $api->guardian_get_tier();
+
+        if (!$tier) {
+          render_register_message();
+          echo "</div>"; // end of #wrap
+          return;
+        }
+
+        $sectionData = $api->guardian_api_sections();
+        $sectionResults = $sectionData['results'];
+
+        $sectionOptions = array();
+        foreach ($sectionResults as $topic) {
+          $sectionOptions[$topic['id']] = $topic['webTitle'];
+        }
+        $sectionOptions[''] = 'All sections';
+        asort($sectionOptions);
+
+        $orderOptions = array(
+          'newest' => 'Newest',
+          'oldest' => 'Oldest',
+          'relevance' => 'Relevance'
         );
 
+        $options = array(
+            'format' => 'json',
+            'show-fields' => 'headline,standfirst,trail-text,thumbnail,byline',
+            'show-tags' => 'keyword',
+            'order-by' => 'newest',
+            'page' => $p
+        );
+
+        if ($s) {
+          $options['q'] = $s;
+        }
+        if ($tag) {
+          $options['tag'] = $tag;
+        }
+        if ($section) {
+          $options['section'] = $section;
+        }
+        if ($order) {
+          $options['order-by'] = $order;
+        }
         $articles = $api->guardian_api_search($options);
 
-        guardian_can_user_publish($articles['userTier']);
-        $contentid = esc_attr($_GET ['contentid']);
         if (!empty($contentid)) {
             $message = Guardian_ContentAPI_add_item( $contentid );
             if (!empty($message)) {
                 echo $message;
             }
         }
+
+
         ?>
         <p>Want news? Find something you like below, click 'Save to Drafts' and then publish away.</p>
 
         <form action="<?php echo $safe_url ?>" method="get" id="search-plugins">
 
-            <input type="text" value="<?php echo $s ?>" name="s" size="50">
+            <input type="text" value="<?php echo $s ?>" name="s" size="30" placeholder="Search terms ... ">
             <label for="plugin-search-input" class="screen-reader-text">Search</label>
             <input type="hidden" name="tag" value="<?php echo $tag ?>">
-            <input type="hidden" name="section" value="<?php echo $section ?>">
             <input type="hidden" name="page" value="<?php echo $page ?>">
-            <input type="submit" class="button" value="Search Articles">
+            <select name="section" id="section">
+              <?php
+              foreach($sectionOptions as $key => $val) {
+                $selected = "";
+                if($key === $section) {
+                  $selected = "selected=\"selected\"";
+                }
+                echo "<option value=\"{$key}\" {$selected}>{$val}</option>";
+              }
+              ?>
+            </select>
+            <select name="order" id="order">
+              <?php
+              foreach($orderOptions as $key => $val) {
+                $selected = "";
+                if($key === $order) {
+                  $selected = "selected=\"selected\"";
+                }
+                echo "<option value=\"{$key}\" {$selected}>{$val}</option>";
+              }
+              ?>
+            </select>
+
+            <input type="submit" class="button" value="Search">
 
         </form>
 
@@ -117,14 +216,13 @@ function Guardian_ContentAPI_admin_page() {
 
         $headfoot = array();
         $headfoot[] = "<th class=\"thumb\" scope=\"col\">Thumbnail</th>";
-        $headfoot[] = "<th class=\"name\" scope=\"col\">Headline</th>";
-        $headfoot[] = "<th class=\"num\" scope=\"col\">Published</th>";
+        $headfoot[] = "<th class=\"name\" scope=\"col\" style=\"min-width: 200px;\">Headline</th>";
         $headfoot[] = "<th class=\"desc\" scope=\"col\">Description</th>";
         $headfoot[] = "<th class=\"action-links\" scope=\"col\">Actions</th>";
 
         $headfoot = implode("\n", $headfoot);
 
-        $link = "{$safe_url}?page={$page}&s={$s}&tag={$tag}&section={$section}";
+        $link = "{$safe_url}?page={$page}&s={$s}&tag={$tag}&section={$section}&order={$order}";
         echo render_pagination( $articles['currentPage'], $articles['pages'], $articles['total'], $link, $articles['startIndex'], $articles['startIndex']+count($articles['results'])-1 ); ?>
         <hr />
 
@@ -164,7 +262,6 @@ function Guardian_ContentAPI_admin_page() {
                                     <ol>
                                         <li><strong>Changes:</strong> You mustn't remove or alter the text, links or images you get from us.</li>
                                         <li><strong>Key:</strong> If you don't have a key, get one <a href="http://www.guardian.co.uk/open-platform" target="_blank">here</a>. It's required. If you do have one, please don't share it or use it anywhere else.</li>
-                                        <li><strong>Ads:</strong> Articles come with ads and performance tracking embedded in them. As above, you mustn't change or remove them. You can, of course, use your own ads elsewhere on your blog, too.</li>
                                         <li><strong>Deletions:</strong> Sometimes but very rarely we have to remove articles. When that happens, this plug-in will replace the withdrawn Guardian content within your blog post with a message saying that the content is not available anymore.</li>
                                     </ol>
                                     <p>If you want to know more, please read the <a href="http://www.guardian.co.uk/open-platform/faq" target="_blank">FAQ</a> or post questions to our <a href="http://groups.google.com/group/guardian-api-talk/" target="_blank">Google Group</a>.</p>
@@ -205,7 +302,7 @@ function Guardian_ContentAPI_add_item($str_item_id) {
 
     if ($tier == 'Free') {
         $message[] = "<div class=\"error\">";
-        $message[] = "	<p>You are in <strong>preview mode</strong>.  This plugin requires an access key in order to publish articles from the Guardian. To get your access key <a href=\"http://guardian.mashery.com/\">click here</a> and go through the registration process.  It's pretty quick and painless.</p>";
+        $message[] = "<p>" . sprintf('You will need a valid key to publish, you can <a href="%s" target="_blank">register for one here.', PREVIEW_KEY_MESSAGE_REGISTRATION) . "</p>";
         $message[] = "</div>";
         return implode("\n", $message);
     }
@@ -313,13 +410,9 @@ function Guardian_Published_Already ($str_item_id) {
  *
  * @param $tier				String of tier.
  */
-function guardian_can_user_publish( $tier = '' ) {
-    $api_request_link = "http://guardian.mashery.com/";
-
-    if ( empty($tier) || $tier == 'free') {
-        $error = new WP_Error('error', __("<div class=\"error\"><p>You are in <strong>preview mode</strong>.  This plugin requires an access key in order to publish articles from the Guardian. To get your access key <a href=\"{$api_request_link}\">click here</a> and go through the registration process.  It's pretty quick and painless.</p></strong></div>"));
-        echo $error->get_error_message();
-    }
+function render_register_message() {
+    $error = new WP_Error('error', __("<div class=\"error\"><p>" . sprintf(PREVIEW_KEY_MESSAGE, PREVIEW_KEY_MESSAGE_REGISTRATION, PREVIEW_KEY_MESSAGE_SETTINGS) . "</p><p>" . sprintf(PREVIEW_KEY_MESSAGE_UPDATE, PREVIEW_KEY_MESSAGE_REGISTRATION) . "</p></div>"));
+    echo $error->get_error_message();
 }
 
 /**
@@ -347,8 +440,7 @@ function render_contentapi_search($arr_related_content) {
             $arr_html_output [] = "		<tr>";
             $arr_html_output [] = "			<td class=\"thumb\">{$image}</td>";
             $arr_html_output [] = "			<td class=\"name\"><a href=\"{$related_content ['webUrl']}\" alt=\"{$related_content ['fields'] ['headline']}\" title=\"{$related_content ['fields'] ['headline']}\" target=\"_blank\">{$related_content ['fields'] ['headline']}</a></td>";
-            $arr_html_output [] = "			<td class=\"vers\">".date("j/m/Y", strtotime($related_content ['webPublicationDate']))."</td>";
-            $arr_html_output [] = "			<td class=\"desc\">{$description}</td>";
+            $arr_html_output [] = "			<td class=\"desc\">{$description}<div class=\"article-meta\"><span class=\"date\">Published ".date("j/m/Y", strtotime($related_content ['webPublicationDate']))." by {$related_content ['fields'] ['byline']}</div></td>";
             $arr_html_output [] = "			<td class=\"action-links\">";
             $arr_html_output [] = "			<a href=\"{$link}\" alt=\"Save to Drafts\">Save to Drafts</a></td>";
             $arr_html_output [] = "		</tr>";
@@ -482,7 +574,7 @@ function render_refinements($articles) {
                 if ($tagLink[strlen($tagLink)-1] == ',') {
                     $tagLink = substr($tagLink, 0, -1);
                 }
-                $link = "{$safe_url}?page={$page}&s={$s}&section={$section}&tag={$tagLink}";
+                $link = "{$safe_url}?page={$page}&order={$order}&s={$s}&section={$section}&tag={$tagLink}";
                 $output[] = "				<span><a class=\"ntdelbutton\" href=\"{$link}\" id=\"post_tag-check-num-0\">X</a>&nbsp;{$t}</span>";
             }
             $output[] = "			</div>";
@@ -490,7 +582,7 @@ function render_refinements($articles) {
         }
 
         if (!empty($s)) {
-            $link = "{$safe_url}?page={$page}&s=&tag={$tag}&section={$section}";
+            $link = "{$safe_url}?page={$page}&order={$order}&s=&tag={$tag}&section={$section}";
             $output[] = "		<div class=\"misc-pub-section\">";
             $output[] = "			<p>Current Search Term:</p>";
             $output[] = "			<div class=\"tagchecklist\">";
@@ -500,7 +592,7 @@ function render_refinements($articles) {
         }
 
         if (!empty($section)) {
-            $link = "{$safe_url}?page={$page}&s={$s}&tag={$tag}&section=";
+            $link = "{$safe_url}?page={$page}&order={$order}&s={$s}&tag={$tag}&section=";
             $output[] = "		<div class=\"misc-pub-section\">";
             $output[] = "			<p>Selected Section:</p>";
             $output[] = "			<div class=\"tagchecklist\">";
@@ -522,7 +614,7 @@ function render_refinements($articles) {
                     } else {
                         $sectionLink = $refinementItem['id'];
                     }
-                    $link = "{$safe_url}?page={$page}&s={$s}&tag={$tag}&section={$sectionLink}";
+                    $link = "{$safe_url}?page={$page}&order={$order}&s={$s}&tag={$tag}&section={$sectionLink}";
                     $output[] = "		<p><a href=\"{$link}\">{$refinementItem['displayName']}</a> (".number_format($refinementItem['count']).")</p>";
                     $sectionLink = '';
                 } else {
@@ -531,7 +623,7 @@ function render_refinements($articles) {
                     } else {
                         $tagLink = $refinementItem['id'];
                     }
-                    $link = "{$safe_url}?page={$page}&s={$s}&tag={$tagLink}&section={$section}";
+                    $link = "{$safe_url}?page={$page}&order={$order}&s={$s}&tag={$tagLink}&section={$section}";
                     $output[] = "		<p><a href=\"{$link}\">{$refinementItem['displayName']}</a> (".number_format($refinementItem['count']).")</p>";
                     $tagLink = '';
                 }
@@ -550,6 +642,7 @@ function Guardian_ContentAPI_add_pages() {
         add_submenu_page ( "post.php", __ ( "Guardian News Feed" ), __ ( "Guardian News Feed" ), 2, __FILE__, "Guardian_ContentAPI_admin_page" );
     }
 }
+
 
 // Plugin admin menus
 add_action ( "admin_menu", "Guardian_ContentAPI_add_pages" );
